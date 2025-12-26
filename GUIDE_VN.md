@@ -1,38 +1,116 @@
-# Hướng dẫn Cài đặt & Sử dụng
+# Hướng Dẫn Sử Dụng App Học Từ Vựng
+**Dành cho gia đình hỗ trợ người khiếm thị**
 
-Để việc học tiếng Anh thuận tiện nhất, bạn/gia đình vui lòng thực hiện các bước sau trên iPhone:
+---
 
-## 1. Cài đặt ứng dụng vào Màn hình chính
-1. Mở trình duyệt **Safari** trên iPhone.
-2. Truy cập địa chỉ: `anki.1dragon.xyz`
-3. Nhấn vào nút **Chia sẻ** (biểu tượng hình vuông có mũi tên chỉ lên ở dưới cùng màn hình).
-4. Cuộn xuống và chọn **Thêm vào MH chính** (Add to Home Screen).
-5. Nhấn **Thêm** (Add) ở góc trên bên phải.
-   *Lúc này, ứng dụng "Học Từ Vựng" sẽ xuất hiện như một app thật trên màn hình.*
+## 📱 Phần 1: Cài Đặt Ban Đầu (Chỉ Làm 1 Lần)
 
-## 2. Kết nối Tay cầm Xbox
-1. Vào **Cài đặt** -> **Bluetooth** trên iPhone.
-2. Nhấn giữ nút ghép nối trên tay cầm Xbox cho đến khi đèn logo nhấp nháy nhanh.
-3. Chọn "Xbox Wireless Controller" trên màn hình iPhone để kết nối.
+### Bước 1: Kết nối tay cầm Xbox với iPhone/iPad
 
-## 3. Tạo lệnh thoại Siri (Lệnh mở app nhanh)
-1. Mở ứng dụng **Phím tắt** (Shortcuts) trên iPhone.
-2. Nhấn dấu **+** để tạo mới.
-3. Đặt tên phím tắt là: **"Học Từ Vựng"**.
-4. Nhấn **Thêm tác vụ** -> Tìm kiếm **"Mở URL"**.
-5. Dán địa chỉ sau vào phần URL: `webapp://anki.1dragon.xyz`.
-   *Từ giờ, chỉ cần nói "Hey Siri, Học Từ Vựng" là app sẽ tự mở.*
+1. **Bật chế độ kết nối trên tay cầm:**
+   - Nhấn giữ nút **logo Xbox** (ở giữa) để bật tay cầm.
+   - Sau đó, nhấn giữ thêm **nút nhỏ** ở cạnh trên (bên cạnh cổng USB) khoảng 3 giây.
+   - Đèn trên nút Xbox sẽ **nhấp nháy nhanh** = đang chờ kết nối.
 
-## 4. Cách học (Quy trình 2 bước)
-Đây là quy trình giúp trí não ghi nhớ tốt nhất:
+2. **Kết nối từ iPhone/iPad:**
+   - Mở **Cài đặt** → **Bluetooth**.
+   - Bật Bluetooth nếu chưa bật.
+   - Tìm "**Xbox Wireless Controller**" trong danh sách → Nhấn vào để kết nối.
+   - Khi đèn Xbox **sáng đều** = đã kết nối thành công.
 
-- **Bước 1 (Nghe từ tiếng Anh)**: Khi app đọc từ tiếng Anh, người dùng suy nghĩ nghĩa của từ đó.
-- **Bước 2 (Xem đáp án)**: Nhấn **BẤT KỲ NÚT NÀO** (A, B hoặc Y) để nghe nghĩa tiếng Việt.
-- **Bước 3 (Đánh giá)**: Sau khi nghe nghĩa, người dùng tự đánh giá:
-    - **Nút A (Màu xanh lá)**: Trả lời "Chưa thuộc" (App sẽ nhắc lại sớm).
-    - **Nút B (Màu đỏ)**: Trả lời "Đã thuộc" (Từ này sẽ ít xuất hiện lại).
-    - **Nút Y (Màu vàng)**: Nghe lại từ/đáp án hiện tại.
+### Bước 2: Thêm vào Màn hình chính
 
-## Lưu ý cho người quản lý
-- Truy cập `anki.1dragon.xyz/admin` để thêm từ mới.
-- Mật khẩu mặc định: `learn123`.
+1. Mở **Safari** và vào địa chỉ: **anki.1dragon.xyz**
+2. Nhấn nút **Chia sẻ** (hình vuông có mũi tên lên).
+3. Kéo xuống và chọn **"Thêm vào Màn hình chính"**.
+4. Đặt tên: **"Học Từ Vựng"** → Nhấn **Thêm**.
+5. Giờ đây, app sẽ xuất hiện trên màn hình như một ứng dụng bình thường.
+
+### Bước 3: Tạo phím tắt Siri (Tùy chọn)
+
+1. Mở app **Phím tắt** (Shortcuts).
+2. Nhấn **"+"** để tạo mới.
+3. Thêm hành động: **"Mở URL"**.
+4. Nhập địa chỉ: `https://anki.1dragon.xyz`
+5. Đặt tên phím tắt: **"Học Từ Vựng"**.
+6. Từ giờ, chỉ cần nói: **"Hey Siri, Học Từ Vựng"** để mở app.
+
+---
+
+## 🎮 Phần 2: Cách Học Hàng Ngày
+
+### Quy trình 3 bước đơn giản:
+
+| Bước | Người dùng làm gì | App phản hồi |
+|------|------------------|--------------|
+| 1 | Mở app → Nhấn bất kỳ nút nào trên tay cầm | App đọc từ tiếng Anh |
+| 2 | Suy nghĩ nghĩa → Nhấn **A** hoặc **B** để xem đáp án | App đọc nghĩa tiếng Việt |
+| 3 | Tự đánh giá: Nhấn **A** (Chưa thuộc) hoặc **B** (Đã thuộc) | App chuyển sang từ tiếp theo |
+
+### Các nút trên tay cầm:
+
+```
+        [Y] - Nghe lại
+         |
+[A] -----+------ [B]
+Chưa thuộc     Đã thuộc
+```
+
+- **Nút A (màu đỏ):** "Chưa thuộc" - từ này sẽ xuất hiện lại sớm.
+- **Nút B (màu xanh lá):** "Đã thuộc" - từ này sẽ xuất hiện lại sau vài ngày.
+- **Nút Y (màu vàng):** "Nghe lại" - lặp lại từ/đáp án hiện tại.
+
+### Âm thanh phản hồi:
+
+| Âm thanh | Ý nghĩa |
+|----------|---------|
+| Tiếng "Ding" cao | Đã nhấn "Đã thuộc" (B) |
+| Tiếng "Bùm" thấp | Đã nhấn "Chưa thuộc" (A) |
+| Rung tay cầm | Xác nhận đã nhấn nút |
+| Nhạc nền nhẹ | App đang chờ bạn bắt đầu |
+
+---
+
+## 📝 Phần 3: Dành Cho Người Quản Lý Từ Vựng
+
+### Thêm từ mới:
+1. Vào địa chỉ: **anki.1dragon.xyz/admin**
+2. Nhập mật khẩu: `learn123`
+3. Điền từ tiếng Anh, nghĩa tiếng Việt, và gợi ý (nếu có).
+4. Nhấn **"Thêm thẻ"**.
+
+### Thêm nhiều từ bằng file Excel/CSV:
+1. Tạo file CSV với 3 cột: `question`, `answer`, `hint`
+2. Ví dụ:
+   ```
+   question,answer,hint
+   Hello,Xin chào,Lời chào phổ biến
+   Book,Quyển sách,Dùng để đọc
+   ```
+3. Vào **anki.1dragon.xyz/admin** → **Nhập CSV** → Chọn file → Tải lên.
+
+---
+
+## ❓ Câu Hỏi Thường Gặp
+
+### "App không nói gì khi mở lên?"
+→ Safari trên iOS yêu cầu nhấn một nút trước khi phát âm thanh. Hãy nhấn bất kỳ nút nào trên tay cầm.
+
+### "Tay cầm không kết nối?"
+→ Đảm bảo tay cầm đang nhấp nháy (chế độ kết nối). Nếu đã kết nối với thiết bị khác trước đó, hãy tắt Bluetooth trên thiết bị đó.
+
+### "App nói quá nhanh/chậm?"
+→ Tốc độ đọc đã được điều chỉnh cho phù hợp. Nếu cần thay đổi, liên hệ người phát triển.
+
+### "Làm sao biết đã hết từ?"
+→ App sẽ nói: "Chúc mừng bạn! Bạn đã hoàn thành bài học hôm nay."
+
+---
+
+## 🆘 Liên Hệ Hỗ Trợ
+
+Nếu có vấn đề, vui lòng liên hệ: **[Điền thông tin liên hệ của bạn]**
+
+---
+
+*Cập nhật lần cuối: 26/12/2024*
