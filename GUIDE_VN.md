@@ -23,13 +23,15 @@
 5. Dán địa chỉ sau vào phần URL: `webapp://anki.1dragon.xyz`.
    *Từ giờ, chỉ cần nói "Hey Siri, Học Từ Vựng" là app sẽ tự mở.*
 
-## 4. Cách học (Dành cho người khiếm thị)
-- Khi mở app, app sẽ nói: "Hãy bật tay cầm Xbox".
-- Người dùng nhấn nút logo trên tay cầm để bật.
-- Khi nghe: "Đã kết nối! Nhấn A để bắt đầu", nhấn nút **A** (màu đỏ - Once/Again) để bắt đầu.
-- **Nút A (Đỏ)**: Trả lời "Chưa thuộc" (App sẽ nhắc lại: "Học lại" + Nghĩa từ).
-- **Nút B (Xanh lá)**: Trả lời "Đã thuộc" (App sẽ nhắc lại: "Đã thuộc" + Nghĩa từ).
-- **Nút Y (Vàng)**: Nghe lại từ đang học.
+## 4. Cách học (Quy trình 2 bước)
+Đây là quy trình giúp trí não ghi nhớ tốt nhất:
+
+- **Bước 1 (Nghe từ tiếng Anh)**: Khi app đọc từ tiếng Anh, người dùng suy nghĩ nghĩa của từ đó.
+- **Bước 2 (Xem đáp án)**: Nhấn **BẤT KỲ NÚT NÀO** (A, B hoặc Y) để nghe nghĩa tiếng Việt.
+- **Bước 3 (Đánh giá)**: Sau khi nghe nghĩa, người dùng tự đánh giá:
+    - **Nút A (Màu xanh lá)**: Trả lời "Chưa thuộc" (App sẽ nhắc lại sớm).
+    - **Nút B (Màu đỏ)**: Trả lời "Đã thuộc" (Từ này sẽ ít xuất hiện lại).
+    - **Nút Y (Màu vàng)**: Nghe lại từ/đáp án hiện tại.
 
 ## Lưu ý cho người quản lý
 - Truy cập `anki.1dragon.xyz/admin` để thêm từ mới.

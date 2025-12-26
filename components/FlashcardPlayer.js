@@ -48,7 +48,6 @@ export default function FlashcardPlayer({ cards, loading }) {
 
         const welcomeMessage = 'Chào bạn. Nhấn nút bất kỳ để bắt đầu học.';
 
-        // Start BGM and try to speak (Unlock audio context)
         startBGM();
         speak(welcomeMessage, 'vi-VN');
 
@@ -56,7 +55,7 @@ export default function FlashcardPlayer({ cards, loading }) {
             if (!isGameStarted) {
                 speak(welcomeMessage, 'vi-VN');
             }
-        }, 10000); // Repeat every 10 seconds
+        }, 10000);
 
         return () => clearInterval(interval);
     }, [isGameStarted, loading]);
@@ -71,18 +70,20 @@ export default function FlashcardPlayer({ cards, loading }) {
         }
     }, []);
 
+    const revealAnswer = useCallback(() => {
+        if (!currentCard || isProcessing || showAnswer) return;
+        setShowAnswer(true);
+        vibrate([50]);
+        speak(currentCard.answer, 'vi-VN');
+    }, [currentCard, isProcessing, showAnswer]);
+
     const handleRating = useCallback(async (rating) => {
-        if (!currentCard || isProcessing) return;
+        if (!currentCard || isProcessing || !showAnswer) return;
         setIsProcessing(true);
 
-        setShowAnswer(true);
         const isGood = rating === Rating.Good;
-
-        // Feedback Cue: Sound + Vibration + Speech
         playSound(isGood ? 'success' : 'error');
         vibrate(isGood ? [50, 50, 50] : [200]);
-
-        speak(currentCard.answer, 'vi-VN');
 
         // Calculate and Save Progress
         const nextState = getNextReview(currentCard.state, rating);
@@ -105,12 +106,17 @@ export default function FlashcardPlayer({ cards, loading }) {
                 setIsGameStarted(false);
             }
             setIsProcessing(false);
-        }, 3000);
-    }, [currentCard, currentIndex, sessionCards, playCard, isProcessing]);
+        }, 1200); // Shorter transition for better feel
+    }, [currentCard, currentIndex, sessionCards, playCard, isProcessing, showAnswer]);
 
-    const repeatCard = useCallback(() => {
-        if (currentCard) playCard(currentCard);
-    }, [currentCard, playCard]);
+    const repeatContent = useCallback(() => {
+        if (!currentCard) return;
+        if (showAnswer) {
+            speak(currentCard.answer, 'vi-VN');
+        } else {
+            playCard(currentCard);
+        }
+    }, [currentCard, showAnswer, playCard]);
 
     const startPractice = useCallback(() => {
         if (sessionCards.length === 0) {
@@ -129,34 +135,52 @@ export default function FlashcardPlayer({ cards, loading }) {
     useEffect(() => {
         const handleKeyDown = (e) => {
             const key = e.key.toLowerCase();
+
+            // Start Screen
             if (!isGameStarted) {
                 if (['a', 'b', 'y', ' ', 'enter'].includes(key)) {
                     e.preventDefault();
-                    startBGM(); // Safety start
+                    startBGM();
                     startPractice();
                 }
                 return;
             }
-            if (key === 'a') { e.preventDefault(); handleRating(Rating.Again); }
-            if (key === 'b') { e.preventDefault(); handleRating(Rating.Good); }
-            if (key === 'y') { e.preventDefault(); repeatCard(); }
+
+            // In-Game
+            if (!showAnswer) {
+                // Any key to reveal
+                if (['a', 'b', 'y', ' ', 'enter'].includes(key)) {
+                    e.preventDefault();
+                    revealAnswer();
+                }
+            } else {
+                // Rate or Repeat
+                if (key === 'a') { e.preventDefault(); handleRating(Rating.Again); }
+                if (key === 'b') { e.preventDefault(); handleRating(Rating.Good); }
+                if (key === 'y') { e.preventDefault(); repeatContent(); }
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
 
         window.handleGamepadButton = (btnIdx) => {
             if (!isGameStarted) {
-                startBGM(); // Safety start
+                startBGM();
                 startPractice();
                 return;
             }
-            if (btnIdx === 0) handleRating(Rating.Again);
-            if (btnIdx === 1) handleRating(Rating.Good);
-            if (btnIdx === 3) repeatCard();
+
+            if (!showAnswer) {
+                revealAnswer();
+            } else {
+                if (btnIdx === 0) handleRating(Rating.Again);
+                if (btnIdx === 1) handleRating(Rating.Good);
+                if (btnIdx === 3) repeatContent();
+            }
         };
 
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isGameStarted, handleRating, repeatCard, startPractice]);
+    }, [isGameStarted, showAnswer, handleRating, revealAnswer, repeatContent, startPractice]);
 
     return (
         <div className="fade-in" style={{ height: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
@@ -178,33 +202,34 @@ export default function FlashcardPlayer({ cards, loading }) {
                             {showAnswer ? (
                                 <h3 style={{ fontSize: '2.5rem', color: 'var(--success)', marginTop: '2rem' }}>{currentCard?.answer}</h3>
                             ) : (
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Nghe và chọn...</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{isProcessing ? 'Đang chuyển...' : 'Hãy suy nghĩ... Nhấn nút bất kỳ để xem đáp án'}</p>
                             )}
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginTop: '4rem' }}>
+                            {/* Visual buttons for reference, though logic is handled by global listeners */}
                             <button
-                                onClick={() => handleRating(Rating.Again)}
+                                onClick={() => showAnswer ? handleRating(Rating.Again) : revealAnswer()}
                                 disabled={isProcessing}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
                             >
                                 <div style={{ background: 'var(--danger)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>A</div>
-                                <span style={{ color: 'var(--text-main)' }}>Chưa thuộc</span>
+                                <span style={{ color: 'var(--text-main)' }}>{showAnswer ? 'Chưa thuộc' : 'Xem đáp án'}</span>
                             </button>
                             <button
-                                onClick={repeatCard}
+                                onClick={repeatContent}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                             >
                                 <div style={{ background: 'var(--warning)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>Y</div>
                                 <span style={{ color: 'var(--text-main)' }}>Nghe lại</span>
                             </button>
                             <button
-                                onClick={() => handleRating(Rating.Good)}
+                                onClick={() => showAnswer ? handleRating(Rating.Good) : revealAnswer()}
                                 disabled={isProcessing}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
                             >
                                 <div style={{ background: 'var(--success)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>B</div>
-                                <span style={{ color: 'var(--text-main)' }}>Đã thuộc</span>
+                                <span style={{ color: 'var(--text-main)' }}>{showAnswer ? 'Đã thuộc' : 'Xem đáp án'}</span>
                             </button>
                         </div>
                     </>
