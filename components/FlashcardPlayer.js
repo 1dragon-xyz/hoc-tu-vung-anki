@@ -352,9 +352,12 @@ export default function FlashcardPlayer({ cards, loading }) {
                         </div>
                     </div>
                 ) : !isGameStarted ? (
-                    <div style={{ padding: '2rem' }}>
+                    <div
+                        style={{ padding: '2rem', cursor: 'pointer' }}
+                        onClick={() => { startBGM(); startPractice(); }}
+                    >
                         <h2 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Sẵn sàng</h2>
-                        <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Nhấn phím bất kỳ trên tay cầm hoặc bàn phím để bắt đầu học...</p>
+                        <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Chạm vào màn hình hoặc nhấn nút bất kỳ để bắt đầu học...</p>
                     </div>
                 ) : (
                     <>
@@ -364,11 +367,14 @@ export default function FlashcardPlayer({ cards, loading }) {
 
                         <h2 style={{ fontSize: '4rem', marginBottom: '1rem' }}>{currentCard?.question}</h2>
 
-                        <div style={{ minHeight: '4rem' }}>
+                        <div
+                            style={{ minHeight: '4rem', cursor: !showAnswer ? 'pointer' : 'default' }}
+                            onClick={() => { if (!showAnswer && !isProcessing) revealAnswer(); }}
+                        >
                             {showAnswer ? (
                                 <h3 style={{ fontSize: '2.5rem', color: 'var(--success)', marginTop: '2rem' }}>{currentCard?.answer}</h3>
                             ) : (
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{isProcessing ? 'Đang chuyển...' : 'Nhấn Y để nghe lại, nhấn nút bất kỳ để xem đáp án'}</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{isProcessing ? 'Đang chuyển...' : 'Chạm để xem đáp án. Y để nghe lại.'}</p>
                             )}
                         </div>
 
