@@ -56,7 +56,8 @@ export default function FlashcardPlayer({ cards }) {
         setIsProcessing(true);
 
         setShowAnswer(true);
-        speak(currentCard.answer, 'vi-VN');
+        const feedback = rating === Rating.Again ? 'Học lại.' : 'Đã thuộc.';
+        speak(`${feedback} ${currentCard.answer}`, 'vi-VN');
 
         // Calculate and Save Progress
         const nextState = getNextReview(currentCard.state, rating);
@@ -88,7 +89,7 @@ export default function FlashcardPlayer({ cards }) {
 
     const startPractice = useCallback(() => {
         if (sessionCards.length === 0) {
-            speak('Chưa có thẻ nào cần học. Chúc chú một ngày vui vẻ!', 'vi-VN');
+            speak('Chưa có thẻ nào cần học. Chúc bạn một ngày vui vẻ!', 'vi-VN');
             return;
         }
         setIsGameStarted(true);
@@ -135,7 +136,7 @@ export default function FlashcardPlayer({ cards }) {
                 <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)', marginBottom: '3rem' }}>
                     {sessionCards.length > 0
                         ? `Bạn có ${sessionCards.length} thẻ cần học.`
-                        : 'Hôm nay chú đã học hết các thẻ rồi!'}
+                        : 'Hôm nay bạn đã học hết các thẻ rồi!'}
                 </p>
                 {sessionCards.length > 0 && (
                     <button
