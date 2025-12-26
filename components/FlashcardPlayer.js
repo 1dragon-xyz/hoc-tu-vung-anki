@@ -5,7 +5,7 @@ import { speak } from '@/lib/tts';
 import { getNextReview, Rating } from '@/lib/fsrs';
 import { playSound, vibrate } from '@/lib/sounds';
 
-export default function FlashcardPlayer({ cards }) {
+export default function FlashcardPlayer({ cards, loading }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
     const [sessionCards, setSessionCards] = useState([]);
@@ -41,6 +41,24 @@ export default function FlashcardPlayer({ cards }) {
     }, [cards]);
 
     const currentCard = sessionCards[currentIndex];
+
+    // Arcade-style "Attract Mode" (Welcome loop)
+    useEffect(() => {
+        if (isGameStarted || loading) return;
+
+        const welcomeMessage = 'Chào bạn. Nhấn nút bất kỳ để bắt đầu học.';
+
+        // Try to speak immediately (might be blocked by browser until first interaction)
+        speak(welcomeMessage, 'vi-VN');
+
+        const interval = setInterval(() => {
+            if (!isGameStarted) {
+                speak(welcomeMessage, 'vi-VN');
+            }
+        }, 10000); // Repeat every 10 seconds
+
+        return () => clearInterval(interval);
+    }, [isGameStarted, loading]);
 
     const playCard = useCallback((card) => {
         if (!card) return;

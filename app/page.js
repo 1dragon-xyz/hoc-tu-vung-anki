@@ -55,7 +55,7 @@ export default function Home() {
   return (
     <main className="container">
       <GamepadHandler onButtonPress={handleButtonPress} />
-      <FlashcardPlayer cards={cards} />
+      <FlashcardPlayer cards={cards} loading={loading} />
 
       <footer style={{ marginTop: '4rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
         Thiết kế dành riêng cho Người khiếm thị • Hội kết nối: Xbox One Controller
