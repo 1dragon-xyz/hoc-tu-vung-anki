@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { speak } from '@/lib/tts';
 import { getNextReview, Rating } from '@/lib/fsrs';
+import { playSound, vibrate } from '@/lib/sounds';
 
 export default function FlashcardPlayer({ cards }) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -56,7 +57,13 @@ export default function FlashcardPlayer({ cards }) {
         setIsProcessing(true);
 
         setShowAnswer(true);
-        const feedback = rating === Rating.Again ? 'Học lại.' : 'Đã thuộc.';
+        const isGood = rating === Rating.Good;
+
+        // Feedback Cue: Sound + Vibration + Speech
+        playSound(isGood ? 'success' : 'error');
+        vibrate(isGood ? [50, 50, 50] : [200]);
+
+        const feedback = isGood ? 'Đã thuộc.' : 'Học lại.';
         speak(`${feedback} ${currentCard.answer}`, 'vi-VN');
 
         // Calculate and Save Progress
@@ -95,6 +102,7 @@ export default function FlashcardPlayer({ cards }) {
         setIsGameStarted(true);
         setCurrentIndex(0);
         setShowAnswer(false);
+        playSound('connect');
         playCard(sessionCards[0]);
     }, [sessionCards, playCard]);
 

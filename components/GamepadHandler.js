@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { speak } from '@/lib/tts';
+import { playSound } from '@/lib/sounds';
 
 export default function GamepadHandler({ onButtonPress, onConnect }) {
     const requestRef = useRef();
@@ -15,6 +16,7 @@ export default function GamepadHandler({ onButtonPress, onConnect }) {
         if (gp) {
             if (!gamepadRef.current) {
                 console.log('Gamepad connected:', gp.id);
+                playSound('connect');
                 speak('Đã kết nối tay cầm Xbox', 'vi-VN');
                 if (onConnect) onConnect();
             }
