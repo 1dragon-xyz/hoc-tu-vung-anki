@@ -11,10 +11,32 @@ export default function FlashcardPlayer({ cards }) {
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
+    // Initial load and filter cards
     useEffect(() => {
-        if (cards.length > 0) {
-            setSessionCards(cards);
-        }
+        const fetchProgress = async () => {
+            if (cards.length > 0) {
+                const now = new Date();
+                const session = [];
+
+                for (const card of cards) {
+                    try {
+                        const res = await fetch(`/api/progress?cardId=${card.id}`);
+                        const state = res.ok ? await res.json() : null;
+
+                        // FSRS Logic: if no state or nextReview <= now, it's due
+                        if (!state || !state.due || new Date(state.due) <= now) {
+                            session.push({ ...card, state });
+                        }
+                    } catch (e) {
+                        session.push({ ...card, state: null });
+                    }
+                }
+
+                // Shuffle session cards
+                setSessionCards(session.sort(() => Math.random() - 0.5));
+            }
+        };
+        fetchProgress();
     }, [cards]);
 
     const currentCard = sessionCards[currentIndex];
@@ -29,12 +51,22 @@ export default function FlashcardPlayer({ cards }) {
         }
     }, []);
 
-    const handleRating = useCallback((rating) => {
+    const handleRating = useCallback(async (rating) => {
         if (!currentCard || isProcessing) return;
         setIsProcessing(true);
 
         setShowAnswer(true);
         speak(currentCard.answer, 'vi-VN');
+
+        // Calculate and Save Progress
+        const nextState = getNextReview(currentCard.state, rating);
+        await fetch('/api/progress', {
+            method: 'POST',
+            body: JSON.stringify({
+                cardId: currentCard.id,
+                cardState: nextState
+            }),
+        });
 
         setTimeout(() => {
             setShowAnswer(false);
@@ -55,12 +87,14 @@ export default function FlashcardPlayer({ cards }) {
     }, [currentCard, playCard]);
 
     const startPractice = useCallback(() => {
+        if (sessionCards.length === 0) {
+            speak('Chưa có thẻ nào cần học. Chúc chú một ngày vui vẻ!', 'vi-VN');
+            return;
+        }
         setIsGameStarted(true);
         setCurrentIndex(0);
         setShowAnswer(false);
-        if (sessionCards.length > 0) {
-            playCard(sessionCards[0]);
-        }
+        playCard(sessionCards[0]);
     }, [sessionCards, playCard]);
 
     // Keyboard + Gamepad handler
@@ -81,7 +115,6 @@ export default function FlashcardPlayer({ cards }) {
 
         window.addEventListener('keydown', handleKeyDown);
 
-        // Also expose for GamepadHandler
         window.handleGamepadButton = (btnIdx) => {
             if (!isGameStarted) {
                 if (btnIdx === 0) startPractice();
@@ -100,15 +133,19 @@ export default function FlashcardPlayer({ cards }) {
             <div className="glass fade-in" style={{ padding: '4rem', textAlign: 'center' }}>
                 <h1 style={{ fontSize: '3rem', marginBottom: '2rem' }}>Học Từ Vựng</h1>
                 <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)', marginBottom: '3rem' }}>
-                    {cards.length > 0 ? `Bạn có ${cards.length} thẻ cần học.` : 'Chưa có thẻ nào được tải.'}
+                    {sessionCards.length > 0
+                        ? `Bạn có ${sessionCards.length} thẻ cần học.`
+                        : 'Hôm nay chú đã học hết các thẻ rồi!'}
                 </p>
-                <button
-                    onClick={startPractice}
-                    className="btn-primary"
-                    style={{ fontSize: '1.5rem', padding: '1.5rem 3rem' }}
-                >
-                    Nhấn để bắt đầu
-                </button>
+                {sessionCards.length > 0 && (
+                    <button
+                        onClick={startPractice}
+                        className="btn-primary"
+                        style={{ fontSize: '1.5rem', padding: '1.5rem 3rem' }}
+                    >
+                        Nhấn A để bắt đầu
+                    </button>
+                )}
             </div>
         );
     }
