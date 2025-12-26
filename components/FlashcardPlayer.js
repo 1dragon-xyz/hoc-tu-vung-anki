@@ -110,7 +110,7 @@ export default function FlashcardPlayer({ cards }) {
         const handleKeyDown = (e) => {
             const key = e.key.toLowerCase();
             if (!isGameStarted) {
-                if (key === 'a' || key === ' ' || key === 'enter') {
+                if (['a', 'b', 'y', ' ', 'enter'].includes(key)) {
                     e.preventDefault();
                     startPractice();
                 }
@@ -125,7 +125,7 @@ export default function FlashcardPlayer({ cards }) {
 
         window.handleGamepadButton = (btnIdx) => {
             if (!isGameStarted) {
-                if (btnIdx === 0) startPractice();
+                startPractice();
                 return;
             }
             if (btnIdx === 0) handleRating(Rating.Again);
@@ -136,70 +136,57 @@ export default function FlashcardPlayer({ cards }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isGameStarted, handleRating, repeatCard, startPractice]);
 
-    if (!isGameStarted) {
-        return (
-            <div className="glass fade-in" style={{ padding: '4rem', textAlign: 'center' }}>
-                <h1 style={{ fontSize: '3rem', marginBottom: '2rem' }}>Học Từ Vựng</h1>
-                <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)', marginBottom: '3rem' }}>
-                    {sessionCards.length > 0
-                        ? `Bạn có ${sessionCards.length} thẻ cần học.`
-                        : 'Hôm nay bạn đã học hết các thẻ rồi!'}
-                </p>
-                {sessionCards.length > 0 && (
-                    <button
-                        onClick={startPractice}
-                        className="btn-primary"
-                        style={{ fontSize: '1.5rem', padding: '1.5rem 3rem' }}
-                    >
-                        Nhấn A để bắt đầu
-                    </button>
-                )}
-            </div>
-        );
-    }
-
     return (
         <div className="fade-in" style={{ height: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <div className="glass" style={{ width: '100%', padding: '4rem', textAlign: 'center', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '1rem', right: '2rem', color: 'var(--text-muted)' }}>
-                    {currentIndex + 1} / {sessionCards.length}
-                </div>
+                {!isGameStarted ? (
+                    <div style={{ padding: '2rem' }}>
+                        <h2 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Sẵn sàng</h2>
+                        <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Nhấn phím bất kỳ trên tay cầm hoặc bàn phím để bắt đầu học...</p>
+                    </div>
+                ) : (
+                    <>
+                        <div style={{ position: 'absolute', top: '1rem', right: '2rem', color: 'var(--text-muted)' }}>
+                            {currentIndex + 1} / {sessionCards.length}
+                        </div>
 
-                <h2 style={{ fontSize: '4rem', marginBottom: '1rem' }}>{currentCard?.question}</h2>
+                        <h2 style={{ fontSize: '4rem', marginBottom: '1rem' }}>{currentCard?.question}</h2>
 
-                <div style={{ minHeight: '4rem' }}>
-                    {showAnswer ? (
-                        <h3 style={{ fontSize: '2.5rem', color: 'var(--success)', marginTop: '2rem' }}>{currentCard?.answer}</h3>
-                    ) : (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Nghe và chọn...</p>
-                    )}
-                </div>
+                        <div style={{ minHeight: '4rem' }}>
+                            {showAnswer ? (
+                                <h3 style={{ fontSize: '2.5rem', color: 'var(--success)', marginTop: '2rem' }}>{currentCard?.answer}</h3>
+                            ) : (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Nghe và chọn...</p>
+                            )}
+                        </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginTop: '4rem' }}>
-                    <button
-                        onClick={() => handleRating(Rating.Again)}
-                        disabled={isProcessing}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
-                    >
-                        <div style={{ background: 'var(--danger)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>A</div>
-                        <span style={{ color: 'var(--text-main)' }}>Chưa thuộc</span>
-                    </button>
-                    <button
-                        onClick={repeatCard}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                        <div style={{ background: 'var(--warning)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>Y</div>
-                        <span style={{ color: 'var(--text-main)' }}>Nghe lại</span>
-                    </button>
-                    <button
-                        onClick={() => handleRating(Rating.Good)}
-                        disabled={isProcessing}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
-                    >
-                        <div style={{ background: 'var(--success)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>B</div>
-                        <span style={{ color: 'var(--text-main)' }}>Đã thuộc</span>
-                    </button>
-                </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginTop: '4rem' }}>
+                            <button
+                                onClick={() => handleRating(Rating.Again)}
+                                disabled={isProcessing}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
+                            >
+                                <div style={{ background: 'var(--danger)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>A</div>
+                                <span style={{ color: 'var(--text-main)' }}>Chưa thuộc</span>
+                            </button>
+                            <button
+                                onClick={repeatCard}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <div style={{ background: 'var(--warning)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>Y</div>
+                                <span style={{ color: 'var(--text-main)' }}>Nghe lại</span>
+                            </button>
+                            <button
+                                onClick={() => handleRating(Rating.Good)}
+                                disabled={isProcessing}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
+                            >
+                                <div style={{ background: 'var(--success)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>B</div>
+                                <span style={{ color: 'var(--text-main)' }}>Đã thuộc</span>
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
