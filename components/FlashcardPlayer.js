@@ -265,7 +265,10 @@ export default function FlashcardPlayer({ cards, loading }) {
 
             // In-Game
             if (!showAnswer) {
-                if (['a', 'b', 'y', ' ', 'enter'].includes(key)) {
+                if (key === 'y') {
+                    e.preventDefault();
+                    repeatContent();
+                } else if (['a', 'b', ' ', 'enter'].includes(key)) {
                     e.preventDefault();
                     revealAnswer();
                 }
@@ -294,7 +297,11 @@ export default function FlashcardPlayer({ cards, loading }) {
             }
 
             if (!showAnswer) {
-                revealAnswer();
+                if (btnIdx === 3) { // Y Button
+                    repeatContent();
+                } else { // A or B Button
+                    revealAnswer();
+                }
             } else {
                 if (btnIdx === 0) handleRating(Rating.Again);
                 if (btnIdx === 1) handleRating(Rating.Good);
