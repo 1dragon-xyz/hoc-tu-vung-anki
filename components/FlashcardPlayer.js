@@ -69,7 +69,7 @@ export default function FlashcardPlayer({ cards, loading }) {
     useEffect(() => {
         if (isGameStarted || isFinished || loading) return;
 
-        const welcomeMessage = 'Chào bạn. Nhấn nút bất kỳ để bắt đầu học.';
+        const welcomeMessage = 'Chào bạn. Chạm vào màn hình một lần, sau đó sử dụng tay cầm để bắt đầu học.';
 
         startBGM();
         speak(welcomeMessage, 'vi-VN');
@@ -78,7 +78,7 @@ export default function FlashcardPlayer({ cards, loading }) {
             if (!isGameStarted && !isFinished) {
                 speak(welcomeMessage, 'vi-VN');
             }
-        }, 10000);
+        }, 15000); // Slightly longer interval
 
         return () => clearInterval(interval);
     }, [isGameStarted, isFinished, loading]);
