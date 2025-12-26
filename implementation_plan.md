@@ -14,7 +14,6 @@ These features have been implemented, tested, and deployed at [anki.1dragon.xyz]
 - [x] **Completed State**: Audio prompt when all daily tasks are finished.
 
 ### 2. Multi-Modal Feedback (The "Answer Cue" Feature)
-- [x] **Verbal Cues**: Speaks "Đã thuộc" or "Học lại" before the answer.
 - [x] **Audio Beeps**: High-pitch "Ding" for success, Low-pitch "Buzz" for mistakes (Web Audio API).
 - [x] **Vibration Feedback**: Physical haptic rumble on the Xbox controller when a button is pressed.
 

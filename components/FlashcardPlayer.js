@@ -63,8 +63,7 @@ export default function FlashcardPlayer({ cards }) {
         playSound(isGood ? 'success' : 'error');
         vibrate(isGood ? [50, 50, 50] : [200]);
 
-        const feedback = isGood ? 'Đã thuộc.' : 'Học lại.';
-        speak(`${feedback} ${currentCard.answer}`, 'vi-VN');
+        speak(currentCard.answer, 'vi-VN');
 
         // Calculate and Save Progress
         const nextState = getNextReview(currentCard.state, rating);
