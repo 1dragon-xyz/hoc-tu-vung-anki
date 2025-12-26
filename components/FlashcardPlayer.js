@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { speak } from '@/lib/tts';
 import { getNextReview, Rating } from '@/lib/fsrs';
-import { playSound, vibrate } from '@/lib/sounds';
+import { playSound, vibrate, startBGM, stopBGM } from '@/lib/sounds';
 
 export default function FlashcardPlayer({ cards, loading }) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,7 +48,8 @@ export default function FlashcardPlayer({ cards, loading }) {
 
         const welcomeMessage = 'Chào bạn. Nhấn nút bất kỳ để bắt đầu học.';
 
-        // Try to speak immediately (might be blocked by browser until first interaction)
+        // Start BGM and try to speak (Unlock audio context)
+        startBGM();
         speak(welcomeMessage, 'vi-VN');
 
         const interval = setInterval(() => {
@@ -119,6 +120,7 @@ export default function FlashcardPlayer({ cards, loading }) {
         setIsGameStarted(true);
         setCurrentIndex(0);
         setShowAnswer(false);
+        stopBGM();
         playSound('connect');
         playCard(sessionCards[0]);
     }, [sessionCards, playCard]);
@@ -130,6 +132,7 @@ export default function FlashcardPlayer({ cards, loading }) {
             if (!isGameStarted) {
                 if (['a', 'b', 'y', ' ', 'enter'].includes(key)) {
                     e.preventDefault();
+                    startBGM(); // Safety start
                     startPractice();
                 }
                 return;
@@ -143,6 +146,7 @@ export default function FlashcardPlayer({ cards, loading }) {
 
         window.handleGamepadButton = (btnIdx) => {
             if (!isGameStarted) {
+                startBGM(); // Safety start
                 startPractice();
                 return;
             }
