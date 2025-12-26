@@ -152,10 +152,10 @@ export default function AdminPage() {
                 <div style={{ display: 'grid', gap: '1rem' }}>
                     {cards.map(card => (
                         <div key={card.id} className="glass" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <div style={{ fontWeight: '700', fontSize: '1.2rem' }}>{card.question}</div>
-                                <div style={{ color: 'var(--text-muted)' }}>{card.answer}</div>
-                                {card.hint && <div style={{ fontSize: '0.8rem', color: 'var(--warning)', marginTop: '0.5rem' }}>Hint: {card.hint}</div>}
+                            <div style={{ flex: 1, minWidth: 0, paddingRight: '1rem' }}>
+                                <div style={{ fontWeight: '700', fontSize: '1.2rem', wordBreak: 'break-word' }}>{card.question}</div>
+                                <div style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>{card.answer}</div>
+                                {card.hint && <div style={{ fontSize: '0.8rem', color: 'var(--warning)', marginTop: '0.5rem', wordBreak: 'break-word' }}>Hint: {card.hint}</div>}
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button onClick={() => speak(card.question, 'en-US')} style={{ background: 'none', color: 'var(--text-muted)' }}>
