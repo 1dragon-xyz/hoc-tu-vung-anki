@@ -16,26 +16,22 @@ export default function Home() {
       })
       .then(data => {
         if (!data || data.length === 0) {
-          // Add a default card if empty
-          setCards([{
-            id: 'default-1',
-            question: 'Hello',
-            answer: 'Xin chào',
-            hint: 'Lần đầu gặp mặt'
-          }]);
+          setCards([
+            { id: 'default-1', question: 'Hello', answer: 'Xin chào', hint: 'Lời chào phổ biến' },
+            { id: 'default-2', question: 'Book', answer: 'Quyển sách', hint: 'Dùng để đọc' },
+            { id: 'default-3', question: 'Orange', answer: 'Quả cam', hint: 'Trái cây màu cam' }
+          ]);
         } else {
           setCards(data);
         }
       })
       .catch(err => {
         console.error('Fetch error:', err);
-        // Fallback to minimal data so it doesn't stay in loading screen
-        setCards([{
-          id: 'error-1',
-          question: 'Hello',
-          answer: 'Xin chào',
-          hint: 'App is in offline mode'
-        }]);
+        setCards([
+          { id: 'error-1', question: 'Hello', answer: 'Xin chào', hint: 'App is in offline mode' },
+          { id: 'error-2', question: 'Book', answer: 'Quyển sách', hint: 'Testing mode' },
+          { id: 'error-3', question: 'Orange', answer: 'Quả cam', hint: 'Demo data' }
+        ]);
       })
       .finally(() => {
         setLoading(false);
