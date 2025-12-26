@@ -1,17 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { speak, stopSpeaking } from '@/lib/tts';
+import { speak } from '@/lib/tts';
 import { getNextReview, Rating } from '@/lib/fsrs';
-import { Volume2, HelpCircle, CheckCircle, RotateCcw } from 'lucide-react';
 
 export default function FlashcardPlayer({ cards }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
     const [sessionCards, setSessionCards] = useState([]);
     const [isGameStarted, setIsGameStarted] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    // Filter cards due for review (simplified for v1: just show all in order)
     useEffect(() => {
         if (cards.length > 0) {
             setSessionCards(cards);
@@ -22,11 +21,7 @@ export default function FlashcardPlayer({ cards }) {
 
     const playCard = useCallback((card) => {
         if (!card) return;
-
-        // 1. Play Question (English)
         speak(card.question, 'en-US');
-
-        // 2. Play Hint after 2s (if exists)
         if (card.hint) {
             setTimeout(() => {
                 speak(`Gợi ý. ${card.hint}`, 'vi-VN');
@@ -34,48 +29,71 @@ export default function FlashcardPlayer({ cards }) {
         }
     }, []);
 
-    const handleRating = async (rating) => {
-        if (!currentCard) return;
+    const handleRating = useCallback((rating) => {
+        if (!currentCard || isProcessing) return;
+        setIsProcessing(true);
 
-        // Reveal answer and speak it
         setShowAnswer(true);
         speak(currentCard.answer, 'vi-VN');
 
-        // Calculate next review (FSRS) - saving locally for v1
-        const updatedState = getNextReview(currentCard.state, rating);
-
-        // Move to next card after 3s
         setTimeout(() => {
             setShowAnswer(false);
             if (currentIndex < sessionCards.length - 1) {
-                setCurrentIndex(prev => prev + 1);
-                playCard(sessionCards[currentIndex + 1]);
+                const nextIdx = currentIndex + 1;
+                setCurrentIndex(nextIdx);
+                playCard(sessionCards[nextIdx]);
             } else {
                 speak('Đã hoàn thành bài học hôm nay. Hẹn gặp lại nhé!', 'vi-VN');
                 setIsGameStarted(false);
             }
+            setIsProcessing(false);
         }, 3000);
-    };
+    }, [currentCard, currentIndex, sessionCards, playCard, isProcessing]);
 
-    const startPractice = () => {
+    const repeatCard = useCallback(() => {
+        if (currentCard) playCard(currentCard);
+    }, [currentCard, playCard]);
+
+    const startPractice = useCallback(() => {
         setIsGameStarted(true);
         setCurrentIndex(0);
-        playCard(sessionCards[0]);
-    };
+        setShowAnswer(false);
+        if (sessionCards.length > 0) {
+            playCard(sessionCards[0]);
+        }
+    }, [sessionCards, playCard]);
 
-    // Expose methods for GamepadHandler
+    // Keyboard + Gamepad handler
     useEffect(() => {
-        window.handleGamepadButton = (btnIdx) => {
+        const handleKeyDown = (e) => {
+            const key = e.key.toLowerCase();
             if (!isGameStarted) {
-                if (btnIdx === 0) startPractice(); // A to start
+                if (key === 'a' || key === ' ' || key === 'enter') {
+                    e.preventDefault();
+                    startPractice();
+                }
                 return;
             }
-
-            if (btnIdx === 0) handleRating(Rating.Again); // A = Again
-            if (btnIdx === 1) handleRating(Rating.Good);  // B = Good
-            if (btnIdx === 3) playCard(currentCard);      // Y = Repeat
+            if (key === 'a') { e.preventDefault(); handleRating(Rating.Again); }
+            if (key === 'b') { e.preventDefault(); handleRating(Rating.Good); }
+            if (key === 'y') { e.preventDefault(); repeatCard(); }
         };
-    }, [isGameStarted, currentCard, playCard, currentIndex, sessionCards]);
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        // Also expose for GamepadHandler
+        window.handleGamepadButton = (btnIdx) => {
+            if (!isGameStarted) {
+                if (btnIdx === 0) startPractice();
+                return;
+            }
+            if (btnIdx === 0) handleRating(Rating.Again);
+            if (btnIdx === 1) handleRating(Rating.Good);
+            if (btnIdx === 3) repeatCard();
+        };
+
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isGameStarted, handleRating, repeatCard, startPractice]);
 
     if (!isGameStarted) {
         return (
@@ -89,7 +107,7 @@ export default function FlashcardPlayer({ cards }) {
                     className="btn-primary"
                     style={{ fontSize: '1.5rem', padding: '1.5rem 3rem' }}
                 >
-                    Nhấn A để bắt đầu
+                    Nhấn để bắt đầu
                 </button>
             </div>
         );
@@ -113,18 +131,29 @@ export default function FlashcardPlayer({ cards }) {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginTop: '4rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ background: 'var(--danger)', width: '3rem', height: '3rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>A</div>
-                        <span>Chưa thuộc</span>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ background: 'var(--warning)', width: '3rem', height: '3rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>Y</div>
-                        <span>Nghe lại</span>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ background: 'var(--success)', width: '3rem', height: '3rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>B</div>
-                        <span>Đã thuộc</span>
-                    </div>
+                    <button
+                        onClick={() => handleRating(Rating.Again)}
+                        disabled={isProcessing}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
+                    >
+                        <div style={{ background: 'var(--danger)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>A</div>
+                        <span style={{ color: 'var(--text-main)' }}>Chưa thuộc</span>
+                    </button>
+                    <button
+                        onClick={repeatCard}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                        <div style={{ background: 'var(--warning)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>Y</div>
+                        <span style={{ color: 'var(--text-main)' }}>Nghe lại</span>
+                    </button>
+                    <button
+                        onClick={() => handleRating(Rating.Good)}
+                        disabled={isProcessing}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
+                    >
+                        <div style={{ background: 'var(--success)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>B</div>
+                        <span style={{ color: 'var(--text-main)' }}>Đã thuộc</span>
+                    </button>
                 </div>
             </div>
         </div>
