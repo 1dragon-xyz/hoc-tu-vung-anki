@@ -115,6 +115,39 @@ export default function FlashcardPlayer({ cards, loading }) {
         speak(currentCard.answer, 'vi-VN');
     }, [currentCard, isProcessing, showAnswer]);
 
+    // Idle Reminder System
+    useEffect(() => {
+        if (!isGameStarted || isFinished || isProcessing) return;
+
+        let reminderTimeout;
+        let repeatTimeout;
+
+        const startTimer = () => {
+            if (!showAnswer) {
+                // To reveal
+                reminderTimeout = setTimeout(() => {
+                    speak('Nhấn nút bất kỳ để xem đáp án.', 'vi-VN');
+                }, 15000); // 15s for thinking
+            } else {
+                // To rate
+                reminderTimeout = setTimeout(() => {
+                    speak('Nhấn A nếu chưa thuộc. B nếu đã thuộc.', 'vi-VN');
+                }, 10000); // 10s for rating
+
+                repeatTimeout = setTimeout(() => {
+                    speak('Nhấn A nếu chưa thuộc. B nếu đã thuộc.', 'vi-VN');
+                }, 25000); // Repeat once at 25s
+            }
+        };
+
+        startTimer();
+
+        return () => {
+            clearTimeout(reminderTimeout);
+            clearTimeout(repeatTimeout);
+        };
+    }, [isGameStarted, isFinished, isProcessing, showAnswer, currentIndex]);
+
     const handleRating = useCallback(async (rating) => {
         if (!currentCard || isProcessing || !showAnswer) return;
         setIsProcessing(true);
@@ -162,11 +195,14 @@ export default function FlashcardPlayer({ cards, loading }) {
 
     const repeatContent = useCallback(() => {
         if (!currentCard) return;
-        if (showAnswer) {
-            speak(currentCard.answer, 'vi-VN');
-        } else {
-            playCard(currentCard);
-        }
+        speak('Nghe lại.', 'vi-VN');
+        setTimeout(() => {
+            if (showAnswer) {
+                speak(currentCard.answer, 'vi-VN');
+            } else {
+                playCard(currentCard);
+            }
+        }, 800);
     }, [currentCard, showAnswer, playCard]);
 
     const startPractice = useCallback(() => {

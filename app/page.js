@@ -44,6 +44,15 @@ export default function Home() {
     }
   };
 
+  // Audio feedback for loading state
+  useEffect(() => {
+    if (loading) {
+      import('@/lib/tts').then(({ speak }) => {
+        speak('Đang tải thẻ học. Vui lòng chờ.', 'vi-VN');
+      });
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
