@@ -126,7 +126,7 @@ export default function FlashcardPlayer({ cards, loading }) {
             if (!showAnswer) {
                 // To reveal
                 reminderTimeout = setTimeout(() => {
-                    speak('Nhấn nút bất kỳ để xem đáp án.', 'vi-VN');
+                    speak('Nhấn Y để nghe lại, nhấn nút bất kỳ để xem đáp án.', 'vi-VN');
                 }, 15000); // 15s for thinking
             } else {
                 // To rate
@@ -368,7 +368,7 @@ export default function FlashcardPlayer({ cards, loading }) {
                             {showAnswer ? (
                                 <h3 style={{ fontSize: '2.5rem', color: 'var(--success)', marginTop: '2rem' }}>{currentCard?.answer}</h3>
                             ) : (
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{isProcessing ? 'Đang chuyển...' : 'Hãy suy nghĩ... Nhấn nút bất kỳ để xem đáp án'}</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{isProcessing ? 'Đang chuyển...' : 'Nhấn Y để nghe lại, nhấn nút bất kỳ để xem đáp án'}</p>
                             )}
                         </div>
 
