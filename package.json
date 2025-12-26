@@ -8,8 +8,12 @@
     "start": "next start"
   },
   "dependencies": {
+    "@vercel/kv": "^3.0.0",
+    "csv-parse": "^6.1.0",
+    "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "ts-fsrs": "^5.2.3"
   }
 }

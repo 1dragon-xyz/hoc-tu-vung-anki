@@ -1,0 +1,17 @@
+{
+    "name": "Học Từ Vựng",
+    "short_name": "HọcTiếngAnh",
+    "description": "Học từ vựng tiếng Anh với tay cầm Xbox",
+    "start_url": "https://anki.1dragon.xyz",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#6366f1",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/3075/3075836.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
