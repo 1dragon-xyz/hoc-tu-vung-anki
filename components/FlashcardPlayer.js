@@ -198,7 +198,11 @@ export default function FlashcardPlayer({ cards, loading }) {
         speak('Nghe lại.', 'vi-VN');
         setTimeout(() => {
             if (showAnswer) {
-                speak(currentCard.answer, 'vi-VN');
+                // Repeat both: English question then Vietnamese answer
+                speak(currentCard.question, 'en-US');
+                setTimeout(() => {
+                    speak(currentCard.answer, 'vi-VN');
+                }, 2000);
             } else {
                 playCard(currentCard);
             }
