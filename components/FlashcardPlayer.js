@@ -272,15 +272,15 @@ export default function FlashcardPlayer({ cards, initialProgress = null, isLoadi
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginTop: '4rem' }}>
                     <button onClick={() => showAnswer ? handleRating(Rating.Again) : revealAnswer()} style={{ background: 'none' }}>
                         <div style={{ background: 'var(--danger)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>A</div>
-                        <div style={{ marginTop: '0.5rem' }}>{showAnswer ? 'Chưa thuộc' : 'Đáp án'}</div>
+                        <div style={{ marginTop: '0.5rem', color: 'var(--text-main)' }}>{showAnswer ? 'Chưa thuộc' : 'Đáp án'}</div>
                     </button>
                     <button onClick={() => playCard(currentCard)} style={{ background: 'none' }}>
                         <div style={{ background: 'var(--warning)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>Y</div>
-                        <div style={{ marginTop: '0.5rem' }}>Nghe lại</div>
+                        <div style={{ marginTop: '0.5rem', color: 'var(--text-main)' }}>Nghe lại</div>
                     </button>
                     <button onClick={() => showAnswer ? handleRating(Rating.Good) : revealAnswer()} style={{ background: 'none' }}>
                         <div style={{ background: 'var(--success)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>B</div>
-                        <div style={{ marginTop: '0.5rem' }}>{showAnswer ? 'Đã thuộc' : 'Đáp án'}</div>
+                        <div style={{ marginTop: '0.5rem', color: 'var(--text-main)' }}>{showAnswer ? 'Đã thuộc' : 'Đáp án'}</div>
                     </button>
                 </div>
             </div>
