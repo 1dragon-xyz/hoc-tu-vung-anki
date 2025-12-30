@@ -1,0 +1,81 @@
+#separator:tab
+#html:false
+Apartment	Căn hộ
+Stair	Thang bộ
+elevator	Thang máy
+Business	Kinh doanh
+I	Tôi
+Is	Là
+that	Đó
+visit / visiting	Thăm
+family	Gia đình
+wonderful	Tuyệt vời
+coffee /	Cà phê
+Coffee shop	Quán cà phê
+run	Chạy
+have to	Phải
+great	Tuyệt hoặc lớn
+back	Trở lại, hoặc là ở phía sau
+well	Tốt
+what	Cái gì
+can	Có thể
+next door	Kế bên
+by the way	Tiện thể
+out of order	Bị hỏng
+today	Hôm nay
+use	Sử dụng
+lobby	Sảnh
+near	Gần
+good day	Một ngày tốt lành
+How's it going?	Dạo này thế nào?
+Good to see you!	Rất vui được gặp anh
+Is that you, Mr. Thang?	Có phải anh Thắng đó không?
+Execuse me, I cannot see. Can you help me, please?	Xin lỗi, tôi không thấy đường. Bạn có thể giúp tôi không?
+Long time no see.	Lâu quá không gặp
+It's been a long time.	Đã lâu lắm rồi nhỉ.
+Pretty good.	Khá tốt
+Can't complain.	Không có gì để phàn nàn
+Just busy.	Chỉ là hơi bận chút thôi
+Let's get coffee soon.	Hôm nào đi cà phê nhé
+See you later.	Gặp lại sau
+Keep in touch.	Giữ liên lạc nhé
+Keep	Giữ
+Touch	Sờ, chạm
+Hold	Giữ chặt
+Be together!	Hãy ở cùng nhau!
+Alone	Một mình
+Don't leave me alone!	Đừng bỏ tôi một mình.
+Lend	Cho mượn
+Borrow	Mượn
+French	Tiếng Pháp
+Leave	Rời xa
+What a pity!	Thật đáng tiếc
+Sick	Bị ốm
+Health	Sức khỏe
+Can't be better!	Không thể nào tốt hơn!
+Not my problem	Không phải vấn đề của tao
+Sorry, wrong number	Xin lỗi, nhầm số
+It's ok. No problem.	Được rồi, không sao đâu.
+No need	Không cần
+Forget	Quên
+Remember	Nhớ
+Leave	Rời khỏi
+Life	Cuộc sống
+Together	Cùng nhau
+Lender	Người cho vay
+Shit	Cức
+Exactly	Chính xác!
+Opposite	Trái nghĩa
+Need	Cần
+Want	Muốn
+Bless you	Chúc bạn mau khỏi bệnh
+High	Cao
+Low	Thấp
+Tree	Cây
+Sit	Ngồi
+All	Tất cả
+Like	Giống
+Fly	Bay
+Sky	Trời
+Best	Tốt nhất
+Memory	Trí nhớ

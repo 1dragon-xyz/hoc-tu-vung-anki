@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { speak } from '@/lib/tts';
 import { getNextReview, Rating } from '@/lib/fsrs';
 import { playSound, vibrate, startBGM, stopBGM } from '@/lib/sounds';
+import { Edit2, Save, X } from 'lucide-react';
 
 export default function FlashcardPlayer({ cards, loading }) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -14,6 +15,9 @@ export default function FlashcardPlayer({ cards, loading }) {
     const [isFinished, setIsFinished] = useState(false);
     const [nextDueIn, setNextDueIn] = useState(null); // Minutes until next card
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState({ question: '', answer: '', hint: '' });
 
     // Initial load and filter cards
     useEffect(() => {
@@ -61,6 +65,10 @@ export default function FlashcardPlayer({ cards, loading }) {
             }
         };
         fetchProgress();
+
+        // Check for admin status
+        const storedAuth = localStorage.getItem('admin_auth');
+        if (storedAuth === 'true') setIsAdmin(true);
     }, [cards]);
 
     const currentCard = sessionCards[currentIndex];
@@ -187,6 +195,51 @@ export default function FlashcardPlayer({ cards, loading }) {
         }, 1200);
     }, [currentCard, currentIndex, sessionCards, isProcessing, showAnswer]);
 
+    const startEdit = useCallback(() => {
+        if (!currentCard || !isAdmin) return;
+        setEditData({
+            question: currentCard.question,
+            answer: currentCard.answer,
+            hint: currentCard.hint || ''
+        });
+        setIsEditing(true);
+    }, [currentCard, isAdmin]);
+
+    const handleSaveEdit = useCallback(async () => {
+        if (!currentCard || isProcessing) return;
+        setIsProcessing(true);
+
+        try {
+            const res = await fetch('/api/cards', {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    id: currentCard.id,
+                    ...editData
+                }),
+            });
+
+            if (res.ok) {
+                // Update local state
+                const updatedCards = [...sessionCards];
+                updatedCards[currentIndex] = {
+                    ...currentCard,
+                    ...editData
+                };
+                setSessionCards(updatedCards);
+                setIsEditing(false);
+                playSound('success');
+            } else {
+                alert('Failed to save card');
+                playSound('error');
+            }
+        } catch (e) {
+            console.error(e);
+            playSound('error');
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [currentCard, isProcessing, editData, sessionCards, currentIndex]);
+
     useEffect(() => {
         if (isGameStarted && !isFinished && currentCard) {
             playCard(currentCard);
@@ -267,11 +320,27 @@ export default function FlashcardPlayer({ cards, loading }) {
                 return;
             }
 
+            // In Edit Mode
+            if (isEditing) {
+                if (key === 'escape') {
+                    e.preventDefault();
+                    setIsEditing(false);
+                }
+                if (e.ctrlKey && key === 'enter') {
+                    e.preventDefault();
+                    handleSaveEdit();
+                }
+                return;
+            }
+
             // In-Game
             if (!showAnswer) {
                 if (key === 'y') {
                     e.preventDefault();
                     repeatContent();
+                } else if (key === 'e' && isAdmin) {
+                    e.preventDefault();
+                    startEdit();
                 } else if (['a', 'b', ' ', 'enter'].includes(key)) {
                     e.preventDefault();
                     revealAnswer();
@@ -280,6 +349,7 @@ export default function FlashcardPlayer({ cards, loading }) {
                 if (key === 'a') { e.preventDefault(); handleRating(Rating.Again); }
                 if (key === 'b') { e.preventDefault(); handleRating(Rating.Good); }
                 if (key === 'y') { e.preventDefault(); repeatContent(); }
+                if (key === 'e' && isAdmin) { e.preventDefault(); startEdit(); }
             }
         };
 
@@ -314,7 +384,7 @@ export default function FlashcardPlayer({ cards, loading }) {
         };
 
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isGameStarted, isFinished, showAnswer, handleRating, revealAnswer, repeatContent, startPractice, continueTodayCards, todayCards.length]);
+    }, [isGameStarted, isFinished, showAnswer, isEditing, isAdmin, handleRating, revealAnswer, repeatContent, startPractice, continueTodayCards, todayCards.length, startEdit, handleSaveEdit]);
 
     return (
         <div className="fade-in" style={{ height: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
@@ -407,6 +477,86 @@ export default function FlashcardPlayer({ cards, loading }) {
                                 <span style={{ color: 'var(--text-main)' }}>{showAnswer ? 'Đã thuộc' : 'Xem đáp án'}</span>
                             </button>
                         </div>
+
+                        {isAdmin && !isEditing && (
+                            <button
+                                onClick={startEdit}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: '1rem',
+                                    right: '2rem',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-muted)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    fontSize: '0.8rem'
+                                }}
+                            >
+                                <Edit2 size={16} /> Edit Card (E)
+                            </button>
+                        )}
+
+                        {isEditing && (
+                            <div className="glass" style={{
+                                position: 'absolute',
+                                inset: 0,
+                                zIndex: 10,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                padding: '2rem',
+                                textAlign: 'left',
+                                background: 'rgba(15, 23, 42, 0.95)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <h3 style={{ margin: 0 }}>Correct Card</h3>
+                                    <button onClick={() => setIsEditing(false)} style={{ background: 'none', color: 'var(--text-muted)' }}><X /></button>
+                                </div>
+                                <div style={{ display: 'grid', gap: '1rem', flex: 1 }}>
+                                    <div className="input-group">
+                                        <label>Question (English)</label>
+                                        <input
+                                            value={editData.question}
+                                            onChange={(e) => setEditData({ ...editData, question: e.target.value })}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label>Answer (Vietnamese)</label>
+                                        <input
+                                            value={editData.answer}
+                                            onChange={(e) => setEditData({ ...editData, answer: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label>Hint (Optional)</label>
+                                        <input
+                                            value={editData.hint}
+                                            onChange={(e) => setEditData({ ...editData, hint: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                                    <button
+                                        onClick={handleSaveEdit}
+                                        className="btn-primary"
+                                        disabled={isProcessing}
+                                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                    >
+                                        <Save size={18} /> {isProcessing ? 'Saving...' : 'Save (Ctrl+Enter)'}
+                                    </button>
+                                    <button
+                                        onClick={() => setIsEditing(false)}
+                                        className="btn-primary"
+                                        style={{ flex: 1, background: 'var(--card-bg)', border: '1px solid var(--primary)' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
             </div>

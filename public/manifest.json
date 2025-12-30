@@ -1,8 +1,8 @@
 {
-    "name": "Học Từ Vựng",
-    "short_name": "HọcTiếngAnh",
-    "description": "Học từ vựng tiếng Anh với tay cầm Xbox",
-    "start_url": "https://anki.1dragon.xyz",
+    "name": "Hearki",
+    "short_name": "Hearki",
+    "description": "Audio flashcards for the visually impaired - Learn English by ear",
+    "start_url": "/",
     "display": "standalone",
     "background_color": "#0f172a",
     "theme_color": "#6366f1",

@@ -1,6 +1,6 @@
 {
-  "name": "custom_anki",
-  "version": "0.1.0",
+  "name": "hearki",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -15,5 +15,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "ts-fsrs": "^5.2.3"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3"
   }
 }
