@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import FlashcardPlayer from '@/components/FlashcardPlayer';
 import GamepadHandler from '@/components/GamepadHandler';
+import RegisterForm from '@/components/RegisterForm';
+import { isDemo, getUserToken } from '@/lib/mode';
 
 // 10 Sample cards for demo purposes
 const DEMO_CARDS = [
@@ -21,9 +23,34 @@ const DEMO_CARDS = [
 export default function Home() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
-    fetch('/api/cards')
+    // 1. Persist token if in URL
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken) {
+      localStorage.setItem('hearki_token', urlToken);
+      // Clean up URL without reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    const currentToken = getUserToken();
+    const isDemoMode = isDemo();
+
+    setToken(currentToken);
+    setDemoMode(isDemoMode);
+
+    if (isDemoMode) {
+      setCards(DEMO_CARDS);
+      setLoading(false);
+      return;
+    }
+
+    // 2. Fetch cards (private or personal via token)
+    const url = currentToken ? `/api/cards?user=${currentToken}` : '/api/cards';
+    fetch(url)
       .then(res => {
         if (!res.ok) throw new Error('API Error');
         return res.json();
@@ -70,10 +97,14 @@ export default function Home() {
   return (
     <main className="container">
       <GamepadHandler onButtonPress={handleButtonPress} />
-      <FlashcardPlayer cards={cards} loading={loading} />
 
-      <footer style={{ marginTop: '4rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+      <FlashcardPlayer cards={cards} loading={loading} demoMode={demoMode} userId={token} />
+
+      {demoMode && <RegisterForm />}
+
+      <footer style={{ marginTop: '4rem', marginBottom: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
         <strong>Hearki</strong> • Audio Flashcards for the Visually Impaired
+        {token && <div style={{ fontSize: '0.7rem', marginTop: '0.5rem' }}>Đã đăng nhập bằng mã riêng</div>}
       </footer>
     </main>
   );

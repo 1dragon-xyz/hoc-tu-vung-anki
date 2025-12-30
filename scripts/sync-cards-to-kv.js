@@ -39,7 +39,7 @@ async function syncCards() {
     // Push to Vercel KV using REST API
     console.log('🚀 Syncing to Vercel KV...');
 
-    const response = await fetch(`${KV_REST_API_URL}/set/cards`, {
+    const response = await fetch(`${KV_REST_API_URL}/set/cards:default`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${KV_REST_API_TOKEN}`,

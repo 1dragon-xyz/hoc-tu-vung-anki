@@ -6,7 +6,7 @@ import { getNextReview, Rating } from '@/lib/fsrs';
 import { playSound, vibrate, startBGM, stopBGM } from '@/lib/sounds';
 import { Edit2, Save, X } from 'lucide-react';
 
-export default function FlashcardPlayer({ cards, loading }) {
+export default function FlashcardPlayer({ cards, loading, demoMode = false, userId = 'default' }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
     const [sessionCards, setSessionCards] = useState([]);
@@ -32,8 +32,13 @@ export default function FlashcardPlayer({ cards, loading }) {
                 let soonestDue = null;
 
                 for (const card of cards) {
+                    // In demo mode, treat all cards as new
+                    if (demoMode) {
+                        dueNow.push({ ...card, state: null });
+                        continue;
+                    }
                     try {
-                        const res = await fetch(`/api/progress?cardId=${card.id}`);
+                        const res = await fetch(`/api/progress?cardId=${card.id}&userId=${userId}`);
                         const state = res.ok ? await res.json() : null;
 
                         if (!state || !state.due) {
@@ -166,13 +171,18 @@ export default function FlashcardPlayer({ cards, loading }) {
 
         // Calculate and Save Progress (FSRS handles the scheduling)
         const nextState = getNextReview(currentCard.state, rating);
-        await fetch('/api/progress', {
-            method: 'POST',
-            body: JSON.stringify({
-                cardId: currentCard.id,
-                cardState: nextState
-            }),
-        });
+
+        // Only save progress in private mode
+        if (!demoMode) {
+            await fetch('/api/progress', {
+                method: 'POST',
+                body: JSON.stringify({
+                    userId: userId,
+                    cardId: currentCard.id,
+                    cardState: nextState
+                }),
+            });
+        }
 
         // Update nextDueIn if this was an "Again" card
         if (rating === Rating.Again && nextState.due) {

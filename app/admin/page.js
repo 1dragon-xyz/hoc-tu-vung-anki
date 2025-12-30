@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Upload, Volume2, Save, Edit3, X } from 'lucide-react';
 import { speak } from '@/lib/tts';
+import { getUserToken } from '@/lib/mode';
 
 export default function AdminPage() {
     const [cards, setCards] = useState([]);
@@ -13,16 +14,28 @@ export default function AdminPage() {
     const [editingId, setEditingId] = useState(null);
     const [editData, setEditData] = useState({ question: '', answer: '', hint: '' });
 
+    const [token, setToken] = useState(null);
+
     useEffect(() => {
         // Basic password check for simplicity in v1
         const storedAuth = localStorage.getItem('admin_auth');
         if (storedAuth === 'true') setIsAuth(true);
 
-        fetchCards();
+        const currentToken = getUserToken();
+        setToken(currentToken);
     }, []);
 
+    useEffect(() => {
+        if (isAuth) {
+            fetchCards();
+        } else {
+            setLoading(false);
+        }
+    }, [isAuth, token]);
+
     const fetchCards = async () => {
-        const res = await fetch('/api/cards');
+        const url = token ? `/api/cards?user=${token}` : '/api/cards';
+        const res = await fetch(url);
         const data = await res.json();
         setCards(data);
         setLoading(false);
@@ -69,7 +82,8 @@ export default function AdminPage() {
 
     const saveToDb = async (updatedCards) => {
         setCards(updatedCards);
-        await fetch('/api/cards', {
+        const url = token ? `/api/cards?user=${token}` : '/api/cards';
+        await fetch(url, {
             method: 'POST',
             body: JSON.stringify(updatedCards),
         });
