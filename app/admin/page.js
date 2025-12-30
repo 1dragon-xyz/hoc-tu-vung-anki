@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Upload, Volume2, Save } from 'lucide-react';
+import { Plus, Trash2, Upload, Volume2, Save, Edit3, X } from 'lucide-react';
 import { speak } from '@/lib/tts';
 
 export default function AdminPage() {
@@ -10,6 +10,8 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true);
     const [isAuth, setIsAuth] = useState(false);
     const [password, setPassword] = useState('');
+    const [editingId, setEditingId] = useState(null);
+    const [editData, setEditData] = useState({ question: '', answer: '', hint: '' });
 
     useEffect(() => {
         // Basic password check for simplicity in v1
@@ -44,8 +46,25 @@ export default function AdminPage() {
     };
 
     const deleteCard = async (id) => {
+        if (!confirm('Are you sure you want to delete this card?')) return;
         const updatedCards = cards.filter(c => c.id !== id);
         await saveToDb(updatedCards);
+    };
+
+    const startEditing = (card) => {
+        setEditingId(card.id);
+        setEditData({ question: card.question, answer: card.answer, hint: card.hint || '' });
+    };
+
+    const cancelEditing = () => {
+        setEditingId(null);
+        setEditData({ question: '', answer: '', hint: '' });
+    };
+
+    const updateCard = async (id) => {
+        const updatedCards = cards.map(c => c.id === id ? { ...c, ...editData } : c);
+        await saveToDb(updatedCards);
+        setEditingId(null);
     };
 
     const saveToDb = async (updatedCards) => {
@@ -151,20 +170,61 @@ export default function AdminPage() {
                 <h3>Card Library ({cards.length})</h3>
                 <div style={{ display: 'grid', gap: '1rem' }}>
                     {cards.map(card => (
-                        <div key={card.id} className="glass" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ flex: 1, minWidth: 0, paddingRight: '1rem' }}>
-                                <div style={{ fontWeight: '700', fontSize: '1.2rem', wordBreak: 'break-word' }}>{card.question}</div>
-                                <div style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>{card.answer}</div>
-                                {card.hint && <div style={{ fontSize: '0.8rem', color: 'var(--warning)', marginTop: '0.5rem', wordBreak: 'break-word' }}>Hint: {card.hint}</div>}
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => speak(card.question, 'en-US')} style={{ background: 'none', color: 'var(--text-muted)' }}>
-                                    <Volume2 size={20} />
-                                </button>
-                                <button onClick={() => deleteCard(card.id)} style={{ background: 'none', color: 'var(--danger)' }}>
-                                    <Trash2 size={20} />
-                                </button>
-                            </div>
+                        <div key={card.id} className="glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {editingId === card.id ? (
+                                <div style={{ display: 'grid', gap: '1rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div className="input-group">
+                                            <label>Question</label>
+                                            <input
+                                                value={editData.question}
+                                                onChange={(e) => setEditData({ ...editData, question: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Answer</label>
+                                            <input
+                                                value={editData.answer}
+                                                onChange={(e) => setEditData({ ...editData, answer: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="input-group">
+                                        <label>Hint (Optional)</label>
+                                        <input
+                                            value={editData.hint}
+                                            onChange={(e) => setEditData({ ...editData, hint: e.target.value })}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button onClick={() => updateCard(card.id)} className="btn-primary" style={{ padding: '0.5rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--success)' }}>
+                                            <Save size={16} /> Save
+                                        </button>
+                                        <button onClick={cancelEditing} className="btn-primary" style={{ padding: '0.5rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--card-bg)', border: '1px solid var(--primary)' }}>
+                                            <X size={16} /> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ flex: 1, minWidth: 0, paddingRight: '1rem' }}>
+                                        <div style={{ fontWeight: '700', fontSize: '1.2rem', wordBreak: 'break-word' }}>{card.question}</div>
+                                        <div style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>{card.answer}</div>
+                                        {card.hint && <div style={{ fontSize: '0.8rem', color: 'var(--warning)', marginTop: '0.5rem', wordBreak: 'break-word' }}>Hint: {card.hint}</div>}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button onClick={() => speak(card.question, 'en-US')} style={{ background: 'none', color: 'var(--text-muted)', padding: '0.5rem' }}>
+                                            <Volume2 size={20} />
+                                        </button>
+                                        <button onClick={() => startEditing(card)} style={{ background: 'none', color: 'var(--primary)', padding: '0.5rem' }}>
+                                            <Edit3 size={20} />
+                                        </button>
+                                        <button onClick={() => deleteCard(card.id)} style={{ background: 'none', color: 'var(--danger)', padding: '0.5rem' }}>
+                                            <Trash2 size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                     {cards.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No cards yet. Create one or import CSV!</p>}

@@ -20,7 +20,7 @@
 
 ### Bước 2: Thêm vào Màn hình chính
 
-1. Mở **Safari** và vào địa chỉ: **anki.1dragon.xyz**
+1. Mở **Safari** và vào địa chỉ: **hearki.1dragon.xyz**
 2. Nhấn nút **Chia sẻ** (hình vuông có mũi tên lên).
 3. Kéo xuống và chọn **"Thêm vào Màn hình chính"**.
 4. Đặt tên: **"Học Từ Vựng"** → Nhấn **Thêm**.
@@ -31,7 +31,7 @@
 1. Mở app **Phím tắt** (Shortcuts).
 2. Nhấn **"+"** để tạo mới.
 3. Thêm hành động: **"Mở URL"**.
-4. Nhập địa chỉ: `https://anki.1dragon.xyz`
+4. Nhập địa chỉ: `https://hearki.1dragon.xyz`
 5. Đặt tên phím tắt: **"Học Từ Vựng"**.
 6. Từ giờ, chỉ cần nói: **"Hey Siri, Học Từ Vựng"** để mở app.
 
@@ -74,7 +74,7 @@ Chưa thuộc     Đã thuộc
 ## 📝 Phần 3: Dành Cho Người Quản Lý Từ Vựng
 
 ### Thêm từ mới:
-1. Vào địa chỉ: **anki.1dragon.xyz/admin**
+1. Vào địa chỉ: **hearki.1dragon.xyz/admin**
 2. Nhập mật khẩu: `learn123`
 3. Điền từ tiếng Anh, nghĩa tiếng Việt, và gợi ý (nếu có).
 4. Nhấn **"Thêm thẻ"**.
@@ -87,7 +87,7 @@ Chưa thuộc     Đã thuộc
    Hello,Xin chào,Lời chào phổ biến
    Book,Quyển sách,Dùng để đọc
    ```
-3. Vào **anki.1dragon.xyz/admin** → **Nhập CSV** → Chọn file → Tải lên.
+3. Vào **hearki.1dragon.xyz/admin** → **Nhập CSV** → Chọn file → Tải lên.
 
 ---
 

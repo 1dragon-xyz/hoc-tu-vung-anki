@@ -1,25 +1,31 @@
 import { NextResponse } from 'next/server';
 import { getCards, saveCards } from '@/lib/db';
 
-export async function GET() {
-    const cards = await getCards();
+export async function GET(request) {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('user') || 'default';
+    const cards = await getCards(userId);
     return NextResponse.json(cards);
 }
 
 export async function POST(request) {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('user') || 'default';
     const cards = await request.json();
-    await saveCards(cards);
+    await saveCards(userId, cards);
     return NextResponse.json({ success: true });
 }
 
 export async function PATCH(request) {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('user') || 'default';
     const updatedCard = await request.json();
-    const cards = await getCards();
+    const cards = await getCards(userId);
     const index = cards.findIndex(c => c.id === updatedCard.id);
 
     if (index !== -1) {
         cards[index] = { ...cards[index], ...updatedCard };
-        await saveCards(cards);
+        await saveCards(userId, cards);
         return NextResponse.json({ success: true });
     }
 

@@ -3,7 +3,7 @@
 An audio-first PWA for English learning, specifically designed for blind users utilizing an Xbox controller.
 
 ## ✅ v1 Completion Checklist
-These features have been implemented, tested, and deployed at [anki.1dragon.xyz](https://anki.1dragon.xyz).
+These features have been implemented, tested, and deployed at [hearki.1dragon.xyz](https://hearki.1dragon.xyz).
 
 ### 1. Learner Experience (Audio-First)
 - [x] **PWA Foundation**: Fullscreen support, offline-ready manifest, and optimized for iPhone Safari.
@@ -52,6 +52,6 @@ These features have been implemented, tested, and deployed at [anki.1dragon.xyz]
 ---
 
 ## 🛠️ Verification for the Family
-**URL**: [https://anki.1dragon.xyz](https://anki.1dragon.xyz)
-**Siri Lệnh**: "Hey Siri, Học Từ Vựng" → Mở `webapp://anki.1dragon.xyz`
+**URL**: [https://hearki.1dragon.xyz](https://hearki.1dragon.xyz)
+**Siri Lệnh**: "Hey Siri, Học Từ Vựng" → Mở `webapp://hearki.1dragon.xyz`
 **Tay Cầm**: Bật Bluetooth, app sẽ báo "Đã kết nối" kèm tiếng Bíp.
