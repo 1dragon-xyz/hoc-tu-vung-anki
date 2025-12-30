@@ -22,17 +22,18 @@ const DEMO_CARDS = [
 
 export default function Home() {
   const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialProgress, setInitialProgress] = useState(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
   const [token, setToken] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // 1. Persist token if in URL
+    setMounted(true);
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
     if (urlToken) {
       localStorage.setItem('hearki_token', urlToken);
-      // Clean up URL without reload
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -44,61 +45,44 @@ export default function Home() {
 
     if (isDemoMode) {
       setCards(DEMO_CARDS);
-      setLoading(false);
+      setIsLoadingData(false);
       return;
     }
 
-    // 2. Fetch cards (private or personal via token)
-    const url = currentToken ? `/api/cards?user=${currentToken}` : '/api/cards';
+    const url = currentToken ? `/api/cards?user=${currentToken}&includeProgress=true` : '/api/cards?includeProgress=true';
     fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error('API Error');
-        return res.json();
-      })
+      .then(res => res.ok ? res.json() : { cards: DEMO_CARDS, progress: {} })
       .then(data => {
-        if (!data || data.length === 0) {
-          setCards(DEMO_CARDS);
+        if (data.cards) {
+          setCards(data.cards);
+          setInitialProgress(data.progress || {});
         } else {
-          setCards(data);
+          setCards(Array.isArray(data) ? data : DEMO_CARDS);
         }
       })
-      .catch(err => {
-        console.error('Fetch error:', err);
-        setCards(DEMO_CARDS);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .catch(() => setCards(DEMO_CARDS))
+      .finally(() => setIsLoadingData(false));
   }, []);
 
-  const handleButtonPress = (btnIdx) => {
+  const handleGamepadPress = (btnIdx) => {
     if (window.handleGamepadButton) {
       window.handleGamepadButton(btnIdx);
     }
   };
 
-  // Audio feedback for loading state
-  useEffect(() => {
-    if (loading) {
-      import('@/lib/tts').then(({ speak }) => {
-        speak('Đang tải thẻ học. Vui lòng chờ.', 'vi-VN');
-      });
-    }
-  }, [loading]);
-
-  if (loading) {
-    return (
-      <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Đang tải thẻ học...</p>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
     <main className="container">
-      <GamepadHandler onButtonPress={handleButtonPress} />
+      <GamepadHandler onButtonPress={handleGamepadPress} />
 
-      <FlashcardPlayer cards={cards} loading={loading} demoMode={demoMode} userId={token} />
+      <FlashcardPlayer
+        cards={cards}
+        initialProgress={initialProgress}
+        isLoading={isLoadingData}
+        demoMode={demoMode}
+        userId={token}
+      />
 
       {demoMode && <RegisterForm />}
 

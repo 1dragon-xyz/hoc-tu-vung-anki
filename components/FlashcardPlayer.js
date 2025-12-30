@@ -1,28 +1,31 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { speak } from '@/lib/tts';
 import { getNextReview, Rating } from '@/lib/fsrs';
 import { playSound, vibrate, startBGM, stopBGM } from '@/lib/sounds';
-import { Edit2, Save, X } from 'lucide-react';
 
-export default function FlashcardPlayer({ cards, loading, demoMode = false, userId = 'default' }) {
+export default function FlashcardPlayer({ cards, initialProgress = null, isLoading, demoMode = false, userId = 'default' }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
     const [sessionCards, setSessionCards] = useState([]);
-    const [todayCards, setTodayCards] = useState([]); // Cards due within today
+    const [todayCards, setTodayCards] = useState([]);
+    const [hasInteracted, setHasInteracted] = useState(false);
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
-    const [nextDueIn, setNextDueIn] = useState(null); // Minutes until next card
+    const [loadingProgress, setLoadingProgress] = useState(true);
+    const [nextDueIn, setNextDueIn] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editData, setEditData] = useState({ question: '', answer: '', hint: '' });
+    const [gamepadConnected, setGamepadConnected] = useState(false);
 
-    // Initial load and filter cards
+    // Track initialization to avoid running effects too early
+    const isReadyRef = useRef(false);
+
+    // 1. Load progress and initialize session
     useEffect(() => {
         const fetchProgress = async () => {
             if (cards.length > 0) {
+                setLoadingProgress(true);
                 const now = new Date();
                 const endOfToday = new Date();
                 endOfToday.setHours(23, 59, 59, 999);
@@ -31,137 +34,107 @@ export default function FlashcardPlayer({ cards, loading, demoMode = false, user
                 const dueToday = [];
                 let soonestDue = null;
 
-                for (const card of cards) {
-                    // In demo mode, treat all cards as new
-                    if (demoMode) {
-                        dueNow.push({ ...card, state: null });
-                        continue;
+                try {
+                    let allProgress = initialProgress || {};
+                    if (!initialProgress && !demoMode) {
+                        const res = await fetch(`/api/progress?userId=${userId || 'default'}`);
+                        allProgress = res.ok ? await res.json() : {};
                     }
-                    try {
-                        const res = await fetch(`/api/progress?cardId=${card.id}&userId=${userId}`);
-                        const state = res.ok ? await res.json() : null;
 
-                        if (!state || !state.due) {
-                            dueNow.push({ ...card, state });
+                    for (const card of cards) {
+                        const state = allProgress[card.id] || null;
+                        if (demoMode || !state || !state.due) {
+                            dueNow.push({ ...card, state: state });
                         } else {
                             const dueDate = new Date(state.due);
                             if (dueDate <= now) {
                                 dueNow.push({ ...card, state });
                             } else if (dueDate <= endOfToday) {
                                 dueToday.push({ ...card, state, dueDate });
-                                // Track soonest
-                                if (!soonestDue || dueDate < soonestDue) {
-                                    soonestDue = dueDate;
-                                }
+                                if (!soonestDue || dueDate < soonestDue) soonestDue = dueDate;
                             }
                         }
-                    } catch (e) {
-                        dueNow.push({ ...card, state: null });
                     }
+                } catch (e) {
+                    cards.forEach(c => dueNow.push({ ...c, state: null }));
                 }
 
                 setSessionCards(dueNow.sort(() => Math.random() - 0.5));
                 setTodayCards(dueToday.sort((a, b) => a.dueDate - b.dueDate));
-
-                if (soonestDue) {
-                    const diffMs = soonestDue - now;
-                    setNextDueIn(Math.max(1, Math.ceil(diffMs / 60000))); // At least 1 minute
-                }
+                if (soonestDue) setNextDueIn(Math.max(1, Math.ceil((soonestDue - now) / 60000)));
+                setLoadingProgress(false);
+                isReadyRef.current = true;
+            } else if (!isLoading) {
+                setLoadingProgress(false);
+                isReadyRef.current = true;
             }
         };
         fetchProgress();
+    }, [cards, demoMode, userId, initialProgress, isLoading]);
 
-        // Check for admin status
-        const storedAuth = localStorage.getItem('admin_auth');
-        if (storedAuth === 'true') setIsAdmin(true);
-    }, [cards]);
-
-    const currentCard = sessionCards[currentIndex];
-
-    // Arcade-style "Attract Mode" (Welcome loop)
-    useEffect(() => {
-        if (isGameStarted || isFinished || loading) return;
-
-        const welcomeMessage = 'Chào bạn. Chạm vào màn hình một lần, sau đó sử dụng tay cầm để bắt đầu học.';
-
-        startBGM();
-        speak(welcomeMessage, 'vi-VN');
-
-        const interval = setInterval(() => {
-            if (!isGameStarted && !isFinished) {
-                speak(welcomeMessage, 'vi-VN');
-            }
-        }, 15000); // Slightly longer interval
-
-        return () => clearInterval(interval);
-    }, [isGameStarted, isFinished, loading]);
-
-    // Speak the finish message
-    useEffect(() => {
-        if (isFinished) {
-            let message = 'Chúc mừng bạn! Bạn đã hoàn thành phần học hiện tại.';
-            if (nextDueIn && todayCards.length > 0) {
-                message += ` Thẻ tiếp theo sẽ sẵn sàng sau ${nextDueIn} phút. Bạn có ${todayCards.length} thẻ còn lại cho hôm nay. Nhấn B để tiếp tục, hoặc nhấn phím bất kỳ để nghỉ ngơi.`;
-            } else if (todayCards.length > 0) {
-                message += ` Bạn có ${todayCards.length} thẻ còn lại cho hôm nay. Nhấn B để tiếp tục.`;
-            } else {
-                message += ' Hẹn gặp lại bạn sau nhé!';
-            }
-            speak(message, 'vi-VN');
+    const startPractice = useCallback(() => {
+        if (sessionCards.length === 0) {
+            setIsFinished(true);
+            return;
         }
-    }, [isFinished, nextDueIn, todayCards.length]);
+        setCurrentIndex(0);
+        setShowAnswer(false);
+        setIsGameStarted(true);
+        setIsFinished(false);
+        stopBGM();
+        playSound('connect');
+    }, [sessionCards]);
+
+    const handleStartClick = useCallback(() => {
+        setHasInteracted(true);
+        const gpInfo = gamepadConnected ? 'Tay cầm đã sẵn sàng.' : 'Chưa kết nối tay cầm.';
+        speak(`Bắt đầu. ${gpInfo}`, 'vi-VN');
+
+        // Auto-start if data is ready
+        if (isReadyRef.current && !loadingProgress && !isLoading) {
+            startPractice();
+        }
+    }, [gamepadConnected, loadingProgress, isLoading, startPractice]);
+
+    // Handle gamepad connection in this component too for status reporting
+    useEffect(() => {
+        const checkGP = () => {
+            if (typeof navigator === 'undefined' || !navigator.getGamepads) return;
+            const gps = navigator.getGamepads();
+            const connected = !!gps[0];
+            setGamepadConnected(connected);
+        };
+        const interval = setInterval(checkGP, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Guidance voice
+    useEffect(() => {
+        if (!hasInteracted) {
+            const interval = setInterval(() => {
+                speak('Chào chú. Chạm vào màn hình để bắt đầu học.', 'vi-VN');
+            }, 15000);
+            return () => clearInterval(interval);
+        }
+    }, [hasInteracted]);
 
     const playCard = useCallback((card) => {
         if (!card) return;
         speak(card.question, 'en-US');
         if (card.hint) {
-            setTimeout(() => {
-                speak(`Gợi ý. ${card.hint}`, 'vi-VN');
-            }, 2500);
+            setTimeout(() => speak(`Gợi ý. ${card.hint}`, 'vi-VN'), 2500);
         }
     }, []);
 
     const revealAnswer = useCallback(() => {
-        if (!currentCard || isProcessing || showAnswer) return;
+        if (!sessionCards[currentIndex] || isProcessing || showAnswer) return;
         setShowAnswer(true);
         vibrate([50]);
-        speak(currentCard.answer, 'vi-VN');
-    }, [currentCard, isProcessing, showAnswer]);
-
-    // Idle Reminder System
-    useEffect(() => {
-        if (!isGameStarted || isFinished || isProcessing) return;
-
-        let reminderTimeout;
-        let repeatTimeout;
-
-        const startTimer = () => {
-            if (!showAnswer) {
-                // To reveal
-                reminderTimeout = setTimeout(() => {
-                    speak('Nhấn Y để nghe lại, nhấn nút bất kỳ để xem đáp án.', 'vi-VN');
-                }, 15000); // 15s for thinking
-            } else {
-                // To rate
-                reminderTimeout = setTimeout(() => {
-                    speak('Nhấn A nếu chưa thuộc. B nếu đã thuộc.', 'vi-VN');
-                }, 10000); // 10s for rating
-
-                repeatTimeout = setTimeout(() => {
-                    speak('Nhấn A nếu chưa thuộc. B nếu đã thuộc.', 'vi-VN');
-                }, 25000); // Repeat once at 25s
-            }
-        };
-
-        startTimer();
-
-        return () => {
-            clearTimeout(reminderTimeout);
-            clearTimeout(repeatTimeout);
-        };
-    }, [isGameStarted, isFinished, isProcessing, showAnswer, currentIndex]);
+        speak(sessionCards[currentIndex].answer, 'vi-VN');
+    }, [sessionCards, currentIndex, isProcessing, showAnswer]);
 
     const handleRating = useCallback(async (rating) => {
+        const currentCard = sessionCards[currentIndex];
         if (!currentCard || isProcessing || !showAnswer) return;
         setIsProcessing(true);
 
@@ -169,406 +142,147 @@ export default function FlashcardPlayer({ cards, loading, demoMode = false, user
         playSound(isGood ? 'success' : 'error');
         vibrate(isGood ? [50, 50, 50] : [200]);
 
-        // Calculate and Save Progress (FSRS handles the scheduling)
         const nextState = getNextReview(currentCard.state, rating);
 
-        // Only save progress in private mode
         if (!demoMode) {
-            await fetch('/api/progress', {
+            fetch('/api/progress', {
                 method: 'POST',
-                body: JSON.stringify({
-                    userId: userId,
-                    cardId: currentCard.id,
-                    cardState: nextState
-                }),
-            });
-        }
-
-        // Update nextDueIn if this was an "Again" card
-        if (rating === Rating.Again && nextState.due) {
-            const diffMs = new Date(nextState.due) - new Date();
-            const mins = Math.max(1, Math.ceil(diffMs / 60000));
-            setNextDueIn(prev => prev ? Math.min(prev, mins) : mins);
-            // Add to todayCards for "continue" option
-            setTodayCards(prev => [...prev, { ...currentCard, state: nextState, dueDate: new Date(nextState.due) }].sort((a, b) => a.dueDate - b.dueDate));
+                body: JSON.stringify({ userId, cardId: currentCard.id, cardState: nextState }),
+            }).catch(() => { });
         }
 
         setTimeout(() => {
             setShowAnswer(false);
             if (currentIndex < sessionCards.length - 1) {
-                const nextIdx = currentIndex + 1;
-                setCurrentIndex(nextIdx);
+                setCurrentIndex(prev => prev + 1);
             } else {
                 setIsFinished(true);
             }
             setIsProcessing(false);
         }, 1200);
-    }, [currentCard, currentIndex, sessionCards, isProcessing, showAnswer]);
+    }, [sessionCards, currentIndex, isProcessing, showAnswer, demoMode, userId]);
 
-    const startEdit = useCallback(() => {
-        if (!currentCard || !isAdmin) return;
-        setEditData({
-            question: currentCard.question,
-            answer: currentCard.answer,
-            hint: currentCard.hint || ''
-        });
-        setIsEditing(true);
-    }, [currentCard, isAdmin]);
-
-    const handleSaveEdit = useCallback(async () => {
-        if (!currentCard || isProcessing) return;
-        setIsProcessing(true);
-
-        try {
-            const res = await fetch('/api/cards', {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    id: currentCard.id,
-                    ...editData
-                }),
-            });
-
-            if (res.ok) {
-                // Update local state
-                const updatedCards = [...sessionCards];
-                updatedCards[currentIndex] = {
-                    ...currentCard,
-                    ...editData
-                };
-                setSessionCards(updatedCards);
-                setIsEditing(false);
-                playSound('success');
-            } else {
-                alert('Failed to save card');
-                playSound('error');
-            }
-        } catch (e) {
-            console.error(e);
-            playSound('error');
-        } finally {
-            setIsProcessing(false);
-        }
-    }, [currentCard, isProcessing, editData, sessionCards, currentIndex]);
-
-    useEffect(() => {
-        if (isGameStarted && !isFinished && currentCard) {
-            playCard(currentCard);
-        }
-    }, [currentIndex, isGameStarted, isFinished]);
-
-    const repeatContent = useCallback(() => {
-        if (!currentCard) return;
-        speak('Nghe lại.', 'vi-VN');
-        setTimeout(() => {
-            if (showAnswer) {
-                // Repeat both: English question then Vietnamese answer
-                speak(currentCard.question, 'en-US');
-                setTimeout(() => {
-                    speak(currentCard.answer, 'vi-VN');
-                }, 2000);
-            } else {
-                playCard(currentCard);
-            }
-        }, 800);
-    }, [currentCard, showAnswer, playCard]);
-
-    const startPractice = useCallback(() => {
-        if (sessionCards.length === 0) {
-            if (todayCards.length > 0) {
-                speak(`Không có thẻ nào đến hạn ngay bây giờ. Bạn có ${todayCards.length} thẻ còn lại cho hôm nay. Nhấn B để tiếp tục.`, 'vi-VN');
-                setIsFinished(true);
-            } else {
-                speak('Hôm nay bạn đã học xong hết rồi! Hẹn gặp lại sau nhé.', 'vi-VN');
-                setIsFinished(true);
-            }
-            return;
-        }
-        setIsGameStarted(true);
-        setIsFinished(false);
-        setCurrentIndex(0);
-        setShowAnswer(false);
-        stopBGM();
-        playSound('connect');
-    }, [sessionCards, todayCards]);
-
-    const continueTodayCards = useCallback(() => {
-        if (todayCards.length === 0) return;
-        // Move todayCards to sessionCards and restart
-        setSessionCards(todayCards.sort(() => Math.random() - 0.5));
-        setTodayCards([]);
-        setNextDueIn(null);
-        setCurrentIndex(0);
-        setShowAnswer(false);
-        setIsFinished(false);
-        setIsGameStarted(true);
-        stopBGM();
-        playSound('connect');
-        speak('Tiếp tục học thêm!', 'vi-VN');
-    }, [todayCards]);
-
-    // Keyboard + Gamepad handler
+    // Keyboard and Gamepad integration
     useEffect(() => {
         const handleKeyDown = (e) => {
             const key = e.key.toLowerCase();
 
-            // Welcome or Finished screen
-            if (!isGameStarted || isFinished) {
-                if (key === 'b' && isFinished && todayCards.length > 0) {
+            if (!hasInteracted) {
+                if ([' ', 'enter', 'a', 'b', 'y'].includes(key)) {
                     e.preventDefault();
-                    continueTodayCards();
-                    return;
-                }
-                if (['a', 'b', 'y', ' ', 'enter'].includes(key)) {
-                    e.preventDefault();
-                    if (isFinished) {
-                        window.location.reload();
-                    } else {
-                        startBGM();
-                        startPractice();
-                    }
+                    handleStartClick();
                 }
                 return;
             }
 
-            // In Edit Mode
-            if (isEditing) {
-                if (key === 'escape') {
+            if (isFinished) {
+                if ([' ', 'enter', 'a', 'b', 'y'].includes(key)) {
                     e.preventDefault();
-                    setIsEditing(false);
-                }
-                if (e.ctrlKey && key === 'enter') {
-                    e.preventDefault();
-                    handleSaveEdit();
+                    window.location.reload();
                 }
                 return;
             }
 
-            // In-Game
+            if (!isGameStarted) return;
+
             if (!showAnswer) {
-                if (key === 'y') {
-                    e.preventDefault();
-                    repeatContent();
-                } else if (key === 'e' && isAdmin) {
-                    e.preventDefault();
-                    startEdit();
-                } else if (['a', 'b', ' ', 'enter'].includes(key)) {
-                    e.preventDefault();
-                    revealAnswer();
-                }
+                if (key === 'y') { e.preventDefault(); playCard(sessionCards[currentIndex]); }
+                else if (['a', 'b', ' ', 'enter'].includes(key)) { e.preventDefault(); revealAnswer(); }
             } else {
                 if (key === 'a') { e.preventDefault(); handleRating(Rating.Again); }
-                if (key === 'b') { e.preventDefault(); handleRating(Rating.Good); }
-                if (key === 'y') { e.preventDefault(); repeatContent(); }
-                if (key === 'e' && isAdmin) { e.preventDefault(); startEdit(); }
+                else if (key === 'b') { e.preventDefault(); handleRating(Rating.Good); }
+                else if (key === 'y') { e.preventDefault(); playCard(sessionCards[currentIndex]); }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
-
-        window.handleGamepadButton = (btnIdx) => {
-            if (!isGameStarted || isFinished) {
-                if (btnIdx === 1 && isFinished && todayCards.length > 0) {
-                    continueTodayCards();
-                    return;
-                }
-                if (isFinished) {
-                    window.location.reload();
-                } else {
-                    startBGM();
-                    startPractice();
-                }
-                return;
-            }
+        window.handleGamepadButton = (idx) => {
+            if (!hasInteracted) { handleStartClick(); return; }
+            if (isFinished) { window.location.reload(); return; }
+            if (!isGameStarted) return;
 
             if (!showAnswer) {
-                if (btnIdx === 3) { // Y Button
-                    repeatContent();
-                } else { // A or B Button
-                    revealAnswer();
-                }
+                if (idx === 3) playCard(sessionCards[currentIndex]);
+                else revealAnswer();
             } else {
-                if (btnIdx === 0) handleRating(Rating.Again);
-                if (btnIdx === 1) handleRating(Rating.Good);
-                if (btnIdx === 3) repeatContent();
+                if (idx === 0) handleRating(Rating.Again);
+                if (idx === 1) handleRating(Rating.Good);
+                if (idx === 3) playCard(sessionCards[currentIndex]);
             }
         };
 
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isGameStarted, isFinished, showAnswer, isEditing, isAdmin, handleRating, revealAnswer, repeatContent, startPractice, continueTodayCards, todayCards.length, startEdit, handleSaveEdit]);
+    }, [hasInteracted, isFinished, isGameStarted, showAnswer, currentIndex, sessionCards, handleStartClick, handleRating, playCard, revealAnswer]);
+
+    useEffect(() => {
+        if (isGameStarted && !isFinished && sessionCards[currentIndex]) {
+            playCard(sessionCards[currentIndex]);
+        }
+    }, [currentIndex, isGameStarted, isFinished, sessionCards, playCard]);
+
+    // UI Rendering
+    if (!hasInteracted) {
+        return (
+            <div
+                style={{ position: 'fixed', inset: 0, background: 'var(--card-bg)', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 1000 }}
+                onClick={handleStartClick}
+            >
+                <div className="glass" style={{ padding: '3rem', textAlign: 'center', borderRadius: '2rem' }}>
+                    <h1 style={{ fontSize: '4rem' }}>Hearki</h1>
+                    <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Chào chú. Chạm bất kỳ đâu để học.</p>
+                    <div style={{ marginTop: '2rem', color: gamepadConnected ? 'var(--success)' : 'var(--danger)' }}>
+                        Tay cầm: {gamepadConnected ? 'Đã kết nối' : 'Chưa kết nối'}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (isLoading || loadingProgress) {
+        return <div style={{ textAlign: 'center', padding: '5rem' }}><h2>Đang tải...</h2></div>;
+    }
+
+    if (isFinished) {
+        return (
+            <div className="glass" style={{ padding: '4rem', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '3rem', color: 'var(--success)' }}>Xong rồi!</h2>
+                <p style={{ fontSize: '1.5rem' }}>Chú đã hoàn thành bài học.</p>
+                <button onClick={() => window.location.reload()} className="btn-primary" style={{ marginTop: '2rem' }}>Học lại</button>
+            </div>
+        );
+    }
+
+    const currentCard = sessionCards[currentIndex];
 
     return (
-        <div className="fade-in" style={{ height: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-            <div className="glass" style={{ width: '100%', padding: '4rem', textAlign: 'center', position: 'relative' }}>
-                {isFinished ? (
-                    <div style={{ padding: '2rem' }}>
-                        <h2 style={{ fontSize: '3.5rem', marginBottom: '2rem', color: 'var(--success)' }}>🎉 Chúc mừng!</h2>
-                        <p style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Bạn đã hoàn thành phần học hiện tại.</p>
+        <div className="fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="glass" style={{ padding: '4rem', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '1rem', right: '2rem', opacity: 0.5 }}>
+                    {currentIndex + 1} / {sessionCards.length}
+                </div>
+                <h2 style={{ fontSize: '4rem' }}>{currentCard?.question}</h2>
+                <div style={{ minHeight: '4rem', marginTop: '2rem' }}>
+                    {showAnswer ? (
+                        <h3 style={{ fontSize: '2.5rem', color: 'var(--success)' }}>{currentCard?.answer}</h3>
+                    ) : (
+                        <p style={{ color: 'var(--text-muted)' }}>Chạm để xem đáp án</p>
+                    )}
+                </div>
 
-                        {nextDueIn && todayCards.length > 0 && (
-                            <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                                ⏰ Thẻ tiếp theo sẽ sẵn sàng sau khoảng <strong>{nextDueIn} phút</strong>.
-                            </p>
-                        )}
-
-                        {todayCards.length > 0 && (
-                            <p style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>
-                                Bạn có <strong>{todayCards.length}</strong> thẻ còn lại cho hôm nay.
-                            </p>
-                        )}
-
-                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            {todayCards.length > 0 && (
-                                <button
-                                    onClick={continueTodayCards}
-                                    className="btn-primary"
-                                    style={{ fontSize: '1.2rem', padding: '1rem 2rem', background: 'var(--success)' }}
-                                >
-                                    B: Học tiếp ({todayCards.length} thẻ)
-                                </button>
-                            )}
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="btn-primary"
-                                style={{ fontSize: '1.2rem', padding: '1rem 2rem', background: 'var(--card-bg)', border: '1px solid var(--primary)' }}
-                            >
-                                Phím khác: Nghỉ ngơi
-                            </button>
-                        </div>
-                    </div>
-                ) : !isGameStarted ? (
-                    <div
-                        style={{ padding: '2rem', cursor: 'pointer' }}
-                        onClick={() => { startBGM(); startPractice(); }}
-                    >
-                        <h2 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Sẵn sàng</h2>
-                        <p style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Chạm vào màn hình hoặc nhấn nút bất kỳ để bắt đầu học...</p>
-                    </div>
-                ) : (
-                    <>
-                        <div style={{ position: 'absolute', top: '1rem', right: '2rem', color: 'var(--text-muted)' }}>
-                            Thẻ {currentIndex + 1} / {sessionCards.length}
-                        </div>
-
-                        <h2 style={{ fontSize: '4rem', marginBottom: '1rem' }}>{currentCard?.question}</h2>
-
-                        <div
-                            style={{ minHeight: '4rem', cursor: !showAnswer ? 'pointer' : 'default' }}
-                            onClick={() => { if (!showAnswer && !isProcessing) revealAnswer(); }}
-                        >
-                            {showAnswer ? (
-                                <h3 style={{ fontSize: '2.5rem', color: 'var(--success)', marginTop: '2rem' }}>{currentCard?.answer}</h3>
-                            ) : (
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>{isProcessing ? 'Đang chuyển...' : 'Chạm để xem đáp án. Y để nghe lại.'}</p>
-                            )}
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginTop: '4rem' }}>
-                            <button
-                                onClick={() => showAnswer ? handleRating(Rating.Again) : revealAnswer()}
-                                disabled={isProcessing}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
-                            >
-                                <div style={{ background: 'var(--danger)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>A</div>
-                                <span style={{ color: 'var(--text-main)' }}>{showAnswer ? 'Chưa thuộc' : 'Xem đáp án'}</span>
-                            </button>
-                            <button
-                                onClick={repeatContent}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                            >
-                                <div style={{ background: 'var(--warning)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>Y</div>
-                                <span style={{ color: 'var(--text-main)' }}>Nghe lại</span>
-                            </button>
-                            <button
-                                onClick={() => showAnswer ? handleRating(Rating.Good) : revealAnswer()}
-                                disabled={isProcessing}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}
-                            >
-                                <div style={{ background: 'var(--success)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', color: 'white' }}>B</div>
-                                <span style={{ color: 'var(--text-main)' }}>{showAnswer ? 'Đã thuộc' : 'Xem đáp án'}</span>
-                            </button>
-                        </div>
-
-                        {isAdmin && !isEditing && (
-                            <button
-                                onClick={startEdit}
-                                style={{
-                                    position: 'absolute',
-                                    bottom: '1rem',
-                                    right: '2rem',
-                                    background: 'none',
-                                    border: 'none',
-                                    color: 'var(--text-muted)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    fontSize: '0.8rem'
-                                }}
-                            >
-                                <Edit2 size={16} /> Edit Card (E)
-                            </button>
-                        )}
-
-                        {isEditing && (
-                            <div className="glass" style={{
-                                position: 'absolute',
-                                inset: 0,
-                                zIndex: 10,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                padding: '2rem',
-                                textAlign: 'left',
-                                background: 'rgba(15, 23, 42, 0.95)'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                    <h3 style={{ margin: 0 }}>Correct Card</h3>
-                                    <button onClick={() => setIsEditing(false)} style={{ background: 'none', color: 'var(--text-muted)' }}><X /></button>
-                                </div>
-                                <div style={{ display: 'grid', gap: '1rem', flex: 1 }}>
-                                    <div className="input-group">
-                                        <label>Question (English)</label>
-                                        <input
-                                            value={editData.question}
-                                            onChange={(e) => setEditData({ ...editData, question: e.target.value })}
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>Answer (Vietnamese)</label>
-                                        <input
-                                            value={editData.answer}
-                                            onChange={(e) => setEditData({ ...editData, answer: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>Hint (Optional)</label>
-                                        <input
-                                            value={editData.hint}
-                                            onChange={(e) => setEditData({ ...editData, hint: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                                    <button
-                                        onClick={handleSaveEdit}
-                                        className="btn-primary"
-                                        disabled={isProcessing}
-                                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                                    >
-                                        <Save size={18} /> {isProcessing ? 'Saving...' : 'Save (Ctrl+Enter)'}
-                                    </button>
-                                    <button
-                                        onClick={() => setIsEditing(false)}
-                                        className="btn-primary"
-                                        style={{ flex: 1, background: 'var(--card-bg)', border: '1px solid var(--primary)' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginTop: '4rem' }}>
+                    <button onClick={() => showAnswer ? handleRating(Rating.Again) : revealAnswer()} style={{ background: 'none' }}>
+                        <div style={{ background: 'var(--danger)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>A</div>
+                        <div style={{ marginTop: '0.5rem' }}>{showAnswer ? 'Chưa thuộc' : 'Đáp án'}</div>
+                    </button>
+                    <button onClick={() => playCard(currentCard)} style={{ background: 'none' }}>
+                        <div style={{ background: 'var(--warning)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>Y</div>
+                        <div style={{ marginTop: '0.5rem' }}>Nghe lại</div>
+                    </button>
+                    <button onClick={() => showAnswer ? handleRating(Rating.Good) : revealAnswer()} style={{ background: 'none' }}>
+                        <div style={{ background: 'var(--success)', width: '4rem', height: '4rem', borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>B</div>
+                        <div style={{ marginTop: '0.5rem' }}>{showAnswer ? 'Đã thuộc' : 'Đáp án'}</div>
+                    </button>
+                </div>
             </div>
         </div>
     );

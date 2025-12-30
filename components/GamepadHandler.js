@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { speak } from '@/lib/tts';
 import { playSound } from '@/lib/sounds';
 
-export default function GamepadHandler({ onButtonPress, onConnect }) {
+export default function GamepadHandler({ onButtonPress, onConnect, onDisconnect }) {
     const requestRef = useRef();
     const gamepadRef = useRef(null);
     const buttonStates = useRef({});
@@ -44,6 +44,7 @@ export default function GamepadHandler({ onButtonPress, onConnect }) {
             console.log('Gamepad disconnected');
             speak('Mất kết nối tay cầm', 'vi-VN');
             gamepadRef.current = null;
+            if (onDisconnect) onDisconnect();
         }
 
         requestRef.current = requestAnimationFrame(pollGamepad);

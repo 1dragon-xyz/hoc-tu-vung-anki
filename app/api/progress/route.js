@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { saveProgress, getProgress } from '@/lib/db';
+import { saveProgress, getProgress, getAllProgress } from '@/lib/db';
 
 // Demo hosts that should not save progress
 const DEMO_HOSTS = ['hearki.1dragon.xyz'];
@@ -14,11 +14,15 @@ export async function GET(request) {
     const userId = searchParams.get('userId') || 'default';
     const cardId = searchParams.get('cardId');
 
-    if (!cardId) return NextResponse.json({ error: 'Missing cardId' }, { status: 400 });
-
     // Demo mode: return empty progress (all cards appear as new)
     if (isDemoRequest(request)) {
         return NextResponse.json(null);
+    }
+
+    if (!cardId) {
+        // Return all progress for this user
+        const allProgress = await getAllProgress(userId);
+        return NextResponse.json(allProgress);
     }
 
     const progress = await getProgress(userId, cardId);

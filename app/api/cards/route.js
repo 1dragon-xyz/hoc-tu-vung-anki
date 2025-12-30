@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import { getCards, saveCards } from '@/lib/db';
 
+import { getAllProgress } from '@/lib/db';
+
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user') || 'default';
+    const includeProgress = searchParams.get('includeProgress') === 'true';
+
+    if (includeProgress) {
+        const [cards, progress] = await Promise.all([
+            getCards(userId),
+            getAllProgress(userId)
+        ]);
+        return NextResponse.json({ cards, progress });
+    }
+
     const cards = await getCards(userId);
     return NextResponse.json(cards);
 }
